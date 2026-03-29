@@ -17,13 +17,42 @@ document.addEventListener('DOMContentLoaded', () => {
         'DISPATCH': ['dispatched.html', 'details.html', 'approved_orders.html']
     };
 
+    const modulePageMap = {
+        'Dashboard': 'index.html',
+        'Admin Approvals': 'admin.html',
+        'Approved Orders': 'approved_orders.html',
+        'Place Order': 'dashboard.html',
+        'QR Gallery': 'gallery.html',
+        'QR for Testing': 'testing.html',
+        'Dispatched': 'dispatched.html',
+        'Settings': 'settings.html'
+    };
+
+    const userModules = JSON.parse(localStorage.getItem('userModules') || '[]');
+    let allowedPages = accessMap[userRole] || [];
+    
+    // Add pages from assigned modules dynamically
+    userModules.forEach(modName => {
+        if (modulePageMap[modName]) {
+            allowedPages.push(modulePageMap[modName]);
+        }
+    });
+    
+    // Always allow common sub-pages if parent is allowed
+    if (allowedPages.includes('dispatched.html') || allowedPages.includes('approved_orders.html')) {
+        allowedPages.push('details.html');
+    }
+
+    allowedPages = [...new Set(allowedPages)]; // Deduplicate
+
     if (userRole && currentPage !== 'login.html') {
-        const allowedPages = accessMap[userRole] || [];
         if (!allowedPages.includes(currentPage) && currentPage !== '') {
-            if (userRole === 'DISPATCH') {
+            if (allowedPages.length > 0) {
+                window.location.href = `/${allowedPages[0]}`;
+            } else if (userRole === 'DISPATCH') {
                 window.location.href = '/dispatched.html';
             } else {
-                window.location.href = '/index.html';
+                window.location.href = '/login.html'; // No access at all
             }
             return;
         }
@@ -31,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Role-based Nav Item Generation
     const navItems = [];
-    const userModules = JSON.parse(localStorage.getItem('userModules') || '[]');
 
     const addNav = (name, url, icon, allowedRoles) => {
         const isSuperAdmin = userRole === 'SUPER_ADMIN';

@@ -16,9 +16,9 @@ import {
   query,
   orderBy,
   getDoc,
+  where,
   setDoc,
   deleteDoc,
-  where,
   limit,
   collectionGroup
 } from 'firebase/firestore';
@@ -93,21 +93,38 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { name, email, phone, password, role, modules } = req.body;
+  const { old_email, name, email, phone, password, role, modules } = req.body;
   try {
-    const userRef = doc(db, 'users', email.toLowerCase());
+    const emailLower = email.toLowerCase();
+    const oldEmailLower = old_email ? old_email.toLowerCase() : null;
+
+    let createdAt = new Date().toISOString();
+    
+    if (oldEmailLower) {
+      const oldRef = doc(db, 'users', oldEmailLower);
+      const oldSnap = await getDoc(oldRef);
+      if (oldSnap.exists()) {
+        createdAt = oldSnap.data().createdAt || createdAt;
+        if (oldEmailLower !== emailLower) {
+          await deleteDoc(oldRef);
+        }
+      }
+    }
+
+    const userRef = doc(db, 'users', emailLower);
     await setDoc(userRef, {
       name,
-      email: email.toLowerCase(),
+      email: emailLower,
       phone,
       password,
       role,
       modules: modules || [],
       updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString() // Should actually check for existance to avoid overwriting createdAt
-    }, { merge: true });
+      createdAt
+    });
     res.json({ success: true });
   } catch (err) {
+    console.error('Error saving user:', err);
     res.status(500).json({ error: 'Failed to save user' });
   }
 });
@@ -135,15 +152,28 @@ app.get('/api/roles', async (req, res) => {
 app.post('/api/roles', async (req, res) => {
   const { name, modules } = req.body;
   try {
-    const roleRef = doc(db, 'roles', name.toUpperCase());
+    const roleName = name.toUpperCase();
+    const roleRef = doc(db, 'roles', roleName);
     await setDoc(roleRef, {
-      name: name.toUpperCase(),
+      name: roleName,
       modules: modules || [],
       updatedAt: new Date().toISOString()
     });
-    res.json({ success: true });
+
+    // Propagate changes to all users assigned this role
+    const usersSnap = await getDocs(query(collection(db, 'users'), where('role', '==', roleName)));
+    const refreshPromises = usersSnap.docs.map(userDoc => 
+      updateDoc(userDoc.ref, { 
+        modules: modules || [],
+        updatedAt: new Date().toISOString()
+      })
+    );
+    await Promise.all(refreshPromises);
+
+    res.json({ success: true, updatedUsers: refreshPromises.length });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to save role' });
+    console.error('Role update error:', err);
+    res.status(500).json({ error: 'Failed to save role and sync users' });
   }
 });
 

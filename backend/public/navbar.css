@@ -150,21 +150,44 @@ body {
 /* =========================================
    GLOBAL DROPDOWN STYLES (White & Orange)
    ========================================= */
+/* Global Input & Select Standard Styles */
+input:not([type="checkbox"]), 
 select {
-    background-color: white !important;
-    color: #334155 !important;
-    /* Slate-700 */
-    border-color: #cbd5e1 !important;
-    /* Slate-300 */
-    accent-color: var(--accent) !important;
-    cursor: pointer;
-    color-scheme: light;
-    /* Force light mode to avoid dark system defaults */
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    line-height: 1.5 !important;
+    padding: 0 1rem !important;
+    border-radius: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 0.9rem !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    display: block !important;
+    width: 100% !important;
 }
 
+select {
+    background-color: white !important;
+    color: #1e293b !important;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1.25rem !important;
+}
+
+input:not([type="checkbox"]):focus,
 select:focus {
     border-color: var(--accent) !important;
-    outline: 2px solid rgba(249, 115, 22, 0.2) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1) !important;
+}
+
+.pr-eye {
+    padding-right: 3.5rem !important;
 }
 
 option {

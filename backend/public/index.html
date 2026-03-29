@@ -2,18 +2,6 @@
 <html lang="en">
 
 <head>
-    <script>
-        const userRole = localStorage.getItem('userRole');
-        const userModules = JSON.parse(localStorage.getItem('userModules') || '[]');
-        
-        if (!userRole) {
-            window.location.href = '/login.html';
-        } else if (userRole !== 'SUPER_ADMIN' && !userModules.includes('Dashboard')) {
-            // Redirect to first available module OR logout if nothing
-            const firstAvailable = userModules.length > 0 ? `/${userModules[0].toLowerCase().replace(' ', '_')}.html` : '/login.html';
-            window.location.href = firstAvailable;
-        }
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Yarn Tracker Pro</title>

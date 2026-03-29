@@ -339,7 +339,31 @@
                     btn.style.background = '#F97316';
 
                     setTimeout(() => {
-                        if (user.role === 'DISPATCH') {
+                        const modules = user.modules || [];
+                        const role = user.role;
+                        
+                        const modulePageMap = {
+                            'Dashboard': 'index.html',
+                            'Admin Approvals': 'admin.html',
+                            'Approved Orders': 'approved_orders.html',
+                            'Place Order': 'dashboard.html',
+                            'QR Gallery': 'gallery.html',
+                            'QR for Testing': 'testing.html',
+                            'Dispatched': 'dispatched.html',
+                            'Settings': 'settings.html'
+                        };
+
+                        if (role === 'SUPER_ADMIN' || modules.includes('Dashboard')) {
+                            window.location.href = '/index.html';
+                        } else if (modules.length > 0) {
+                            // Find first module that has a corresponding file
+                            const firstMatch = modules.find(m => modulePageMap[m]);
+                            if (firstMatch) {
+                                window.location.href = `/${modulePageMap[firstMatch]}`;
+                            } else {
+                                window.location.href = '/index.html';
+                            }
+                        } else if (role === 'DISPATCH') {
                             window.location.href = '/dispatched.html';
                         } else {
                             window.location.href = '/index.html';
