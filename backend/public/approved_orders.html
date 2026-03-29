@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approved Orders | Yarn Roll Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/navbar.css">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .glass-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+
+        /* Rack Visualization Styles */
+        .rack-visual {
+            background: #e2e8f0;
+            border: 10px solid #94a3b8;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 150px;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .rack-visual::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            right: 10px;
+            height: 10px;
+            background: #64748b;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .shelf-row {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 8px;
+            border-bottom: 8px solid #cbd5e1;
+            flex-wrap: wrap;
+            align-content: flex-end;
+            min-height: 60px;
+            position: relative;
+        }
+
+        .shelf-row::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .bin-box {
+            width: 55px;
+            height: 45px;
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 4px 0 #1e40af, 0 6px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.1s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .bin-box:hover {
+            transform: translateY(-2px);
+            z-index: 10;
+            background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+        }
+
+        .bin-box:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #1e40af, inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .bin-count-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: bold;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(30px) scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen pb-10">
+    <div id="navbar-placeholder"></div>
+    <script src="/navbar.js"></script>
+
+    <main class="max-w-[1400px] mx-auto px-6 py-8 mt-20">
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Approved Orders</h1>
+                <p class="text-slate-500 mt-2 text-lg">Orders ready for dispatch unit to process</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="fetchApprovedOrders()"
+                    class="h-[42px] w-[42px] rounded-lg border border-slate-200 bg-white cursor-pointer text-slate-600 flex items-center justify-center p-0 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+                    <svg id="refresh-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Approved Orders Section -->
+        <section class="mb-12">
+            <div id="approved-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Approved orders will be injected here -->
+                <div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    Loading approved orders...
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bin Details Modal -->
+    <div id="bin-modal" class="modal-overlay" onclick="closeBinModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center font-bold text-xl shadow-inner"
+                        id="modal-bin-icon">
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Bin Details</h3>
+                        <p class="text-sm text-slate-500 font-medium" id="modal-rack-info">Rack location unknown</p>
+                    </div>
+                </div>
+                <button onclick="closeBinModal()"
+                    class="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto custom-scrollbar">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Allocated Yarns</h4>
+                    <span class="text-xs text-slate-400 font-medium" id="modal-bin-total">0 Rolls</span>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-5 font-semibold text-xs uppercase">Roll ID / Yarn Type</th>
+                                <th class="py-3 px-5 font-semibold text-xs uppercase text-right">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-bin-content" class="divide-y divide-slate-100 bg-white">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="closeBinModal()"
+                    class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchApprovedOrders() {
+            const icon = document.getElementById('refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+
+            try {
+                const response = await fetch('/api/approved-orders');
+                const orders = await response.json();
+                renderApprovedOrders(orders);
+            } catch (error) {
+                console.error('Failed to fetch:', error);
+                document.getElementById('approved-orders-grid').innerHTML = '<div class="col-span-full text-center py-8 text-rose-500 bg-rose-50 rounded-xl border border-rose-200">Failed to load approved orders.</div>';
+            } finally {
+                if (icon) setTimeout(() => icon.classList.remove('animate-spin'), 500);
+            }
+        }
+
+        function renderApprovedOrders(orders) {
+            const grid = document.getElementById('approved-orders-grid');
+
+            if (orders.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">No active approved orders waiting for dispatch.</div>';
+                return;
+            }
+
+            grid.innerHTML = orders.map(order => {
+                const dateStr = new Date(order.approved_at).toLocaleString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                // Group allocations by Rack
+                const rackGroups = {};
+                (order.allocations || []).forEach(alloc => {
+                    const rId = alloc.rack || '?';
+                    if (!rackGroups[rId]) rackGroups[rId] = {};
+                    const bId = alloc.bin || '?';
+                    if (!rackGroups[rId][bId]) rackGroups[rId][bId] = [];
+                    rackGroups[rId][bId].push(alloc);
+                });
+
+                const racksHtml = Object.entries(rackGroups).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([rId, bins]) => {
+                    const sortedBins = Object.entries(bins).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}));
+                    
+                    const shelfRows = [];
+                    const binsPerShelf = 4;
+                    for (let i = 0; i < sortedBins.length; i += binsPerShelf) {
+                        const shelf = sortedBins.slice(i, i + binsPerShelf);
+                        const binHtml = shelf.map(([bId, allocs]) => {
+                            const allocsJsonStr = JSON.stringify(allocs).replace(/"/g, '&quot;');
+                            return `
+                            <div class="bin-box group ring-2 ring-orange-400 ring-offset-1 z-20 hover:scale-105 transition-transform" 
+                                 onclick="openDetailsModal('${rId}', '${bId}', ${allocsJsonStr})"
+                                 title="Click to view details">
+                                <div class="flex flex-col items-center">
+                                    <span class="leading-none">${bId}</span>
+                                </div>
+                                <div class="bin-count-badge group-hover:bg-white group-hover:text-red-500 transition-colors">
+                                    ${allocs.length}
+                                </div>
+                            </div>
+                            `;
+                        }).join('');
+                        shelfRows.push(`<div class="shelf-row">${binHtml}</div>`);
+                    }
+
+                    return `
+                    <div class="mb-5 border border-slate-200 rounded-xl p-3 bg-white shadow-sm">
+                        <div class="flex items-center gap-2 mb-3">
+                             <div class="w-8 h-8 bg-slate-100 text-slate-600 rounded-md flex items-center justify-center font-bold text-sm">
+                                 ${rId}
+                             </div>
+                             <h4 class="text-sm font-bold text-slate-800">Rack ${rId}</h4>
+                        </div>
+                        <div class="rack-visual !min-h-0 !p-4 !gap-4">
+                            ${shelfRows.join('')}
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                return `
+                <div class="glass-card p-6 flex flex-col h-full hover:shadow-lg transition-shadow border-t-4 border-t-emerald-500">
+                    <div class="flex justify-between items-start mb-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md font-bold uppercase tracking-wider mb-2 inline-block">APPROVED</span>
+                            <h3 class="font-bold text-xl text-slate-800">${order.customer_name}</h3>
+                            <p class="text-xs text-slate-500 mt-1">Order Ref: <span class="font-mono bg-slate-100 px-1 rounded">${order.order_id}</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 -mx-2 px-2">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Picking Locations</h4>
+                        <div class="mb-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2 pb-2">
+                            ${racksHtml || '<p class="text-slate-400 text-sm">No allocations found.</p>'}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <p class="text-xs text-slate-400 mb-3 text-center">Approved on: <span class="font-semibold text-slate-500">${dateStr}</span></p>
+                        <button class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200" onclick="alert('Order dispatch flow has successfully loaded details for ${order.order_id}. Actual roll state transition functionality can be integrated seamlessly.')">
+                            Dispatch Entire Order
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.onload = fetchApprovedOrders;
+
+        // Modal Logic
+        function openDetailsModal(rackId, binId, rolls) {
+            document.getElementById('modal-bin-icon').textContent = binId;
+            document.getElementById('modal-rack-info').textContent = `Rack ${rackId} • Bin ${binId}`;
+            document.getElementById('modal-bin-total').textContent = `${rolls.length} Rolls`;
+
+            const tbody = document.getElementById('modal-bin-content');
+            
+            if (rolls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500 font-medium bg-slate-50">Bin is empty.</td></tr>';
+            } else {
+                tbody.innerHTML = rolls.map(roll => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 px-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                                    #${(roll.roll_id || roll.id || '').slice(-4)}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-800 leading-tight">${roll.yarn_type}</p>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">ID: ${roll.roll_id || roll.id}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-5 text-right font-bold text-slate-700">1</td>
+                    </tr>
+                `).join('');
+            }
+
+            const modal = document.getElementById('bin-modal');
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBinModal(e) {
+            if (e && e.target !== e.currentTarget) return;
+            const modal = document.getElementById('bin-modal');
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+    </script>
+</body>
+
+</html>

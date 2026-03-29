@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Yarn Roll Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .settings-tab {
+            color: #64748b;
+            background: transparent;
+        }
+
+        .settings-tab:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .settings-tab.active {
+            background: #fff7ed;
+            color: #ea580c;
+            box-shadow: inset 0 0 0 1px #ffedd5;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .success-toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="/navbar.css">
+    <script src="/navbar.js"></script>
+</head>
+
+<body class="flex flex-col min-h-screen">
+    <div id="navbar-placeholder"></div>
+    <!-- Navbar injected here by navbar.js -->
+
+    <main class="flex-1 mt-20 p-8 max-w-7xl mx-auto w-full flex gap-10">
+        <!-- Sidebar Navigation -->
+        <aside class="w-72 shrink-0 space-y-4">
+            <div class="glass-card p-4 sticky top-28">
+                <nav class="space-y-1">
+                    <button onclick="switchTab('system-config')" id="tab-system-config" class="settings-tab active w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+                        System Config
+                    </button>
+                    <button onclick="switchTab('role-mgmt')" id="tab-role-mgmt" class="settings-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m16-10a4 4 0 11-8 0 4 4 0 018 0zM23 21v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75"></path></svg>
+                        Role Definitions
+                    </button>
+                    <button onclick="switchTab('user-mgmt')" id="tab-user-mgmt" class="settings-tab w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        User Management
+                    </button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Right Content Section -->
+        <section class="flex-1 min-w-0">
+            <!-- System Config Tab Content -->
+            <div id="section-system-config" class="tab-content">
+                <header class="mb-10">
+                    <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight">System Configuration</h2>
+                    <p class="text-slate-500 mt-2 text-lg">Define warehouse storage limits and rack rules</p>
+                </header>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
+                    <!-- Rolls per Bin Config -->
+                    <div class="glass-card p-8 shadow-sm">
+                        <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 mb-6">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Rolls per Bin</h3>
+                        <p class="text-slate-500 mb-6 text-sm leading-relaxed">Maximum roll count for each bin.</p>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Max Capacity</label>
+                            <input type="number" id="bin_capacity" value="30" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-orange-500 outline-none font-bold text-xl transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Max Weight Config -->
+                    <div class="glass-card p-8 shadow-sm">
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 mb-6">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Max Bin Weight</h3>
+                        <p class="text-slate-500 mb-6 text-sm leading-relaxed">Weight threshold (kg) allowed per bin.</p>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Weight Limit (kg)</label>
+                            <input type="number" id="max_bin_weight" value="500" step="0.1" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-green-500 outline-none font-bold text-xl transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Bins per Rack Config -->
+                    <div class="glass-card p-8 shadow-sm">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 mb-6">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Bins per Rack</h3>
+                        <p class="text-slate-500 mb-6 text-sm leading-relaxed">Total bins available vertically in each rack.</p>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bins Count</label>
+                            <input type="number" id="max_bins" value="10" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-blue-500 outline-none font-bold text-xl transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-start mb-12">
+                    <button onclick="saveSettings()" id="saveBtn" class="bg-slate-900 hover:bg-black text-white px-8 py-4 rounded-xl font-bold shadow-xl transition transform active:scale-95 uppercase tracking-widest text-xs">
+                        Apply System Changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Role Definitions Tab Content -->
+            <div id="section-role-mgmt" class="tab-content hidden">
+                <header class="mb-10 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight">Role Definitions</h2>
+                        <p class="text-slate-500 mt-2 text-lg">Define core roles and their default module access</p>
+                    </div>
+                    <button onclick="openRoleModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        DEFINE NEW ROLE
+                    </button>
+                </header>
+
+                <div class="glass-card overflow-hidden shadow-sm border border-slate-100">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50/50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Role Name</th>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Modules Assigned</th>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleTableBody" class="divide-y divide-slate-100">
+                            <!-- Roles populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- User Management Tab Content -->
+            <div id="section-user-mgmt" class="tab-content hidden">
+                <header class="mb-10 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-4xl font-extrabold text-slate-800 tracking-tight">User Accounts</h2>
+                        <p class="text-slate-500 mt-2 text-lg">Create and manage accounts and module permissions</p>
+                    </div>
+                    <button onclick="openUserModal()" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        CREATE NEW USER
+                    </button>
+                </header>
+
+                <div class="glass-card overflow-hidden shadow-sm border border-slate-100">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50/50 border-b border-slate-100">
+                            <tr>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Account Info</th>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Contact</th>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest">Access</th>
+                                <th class="px-6 py-4 font-bold text-[10px] text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-slate-100">
+                            <!-- Users populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Role Modal -->
+    <div id="roleModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl scale-95 transition-transform" id="roleModalCard">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center text-indigo-600">
+                <h3 class="text-2xl font-bold" id="roleModalTitle">Define Role</h3>
+                <button onclick="closeRoleModal()" class="text-slate-400 hover:text-slate-800 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role Name</label>
+                    <input type="text" id="role_name_input" placeholder="e.g. SHIPPER, MANAGER" class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 transition font-bold uppercase">
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Default Access Permissions</label>
+                    <div class="grid grid-cols-2 gap-3" id="roleModuleGrid">
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Dashboard" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Dashboard</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Admin Approvals" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Admin Approvals</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Approved Orders" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Approved Orders</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Place Order" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Place Order</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="QR Gallery" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">QR Gallery</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Dispatched" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Dispatched</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Settings" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Settings</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 bg-slate-50 flex gap-4">
+                <button onclick="closeRoleModal()" class="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 transition">CANCEL</button>
+                <button onclick="saveRole()" id="saveRoleBtn" class="flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition">SAVE ROLE DEF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="userModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl scale-95 transition-transform" id="userModalCard">
+            <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-slate-800" id="modalTitle">Account Setup</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-800 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto space-y-6 custom-scrollbar">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Full Name</label>
+                        <input type="text" id="user_name" placeholder="John Doe" class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-orange-500 transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role</label>
+                        <select id="user_role" class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-orange-500 transition">
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="DISPATCH">DISPATCH UNIT</option>
+                            <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email Address</label>
+                        <input type="email" id="user_email" placeholder="john@company.com" class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-orange-500 transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone Number</label>
+                        <input type="text" id="user_phone" placeholder="+1..." class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-orange-500 transition">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Password</label>
+                    <input type="password" id="user_password" placeholder="••••••••" class="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:border-orange-500 transition">
+                </div>
+
+                <div class="space-y-4">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module Access Control</label>
+                    <div class="grid grid-cols-2 gap-3" id="moduleGrid">
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Dashboard" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Dashboard</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Admin Approvals" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Admin Approvals</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Approved Orders" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Approved Orders</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Place Order" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Place Order</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="QR Gallery" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">QR Gallery</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Dispatched" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Dispatched</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition">
+                            <input type="checkbox" value="Settings" class="w-4 h-4 text-orange-600 rounded">
+                            <span class="text-sm font-semibold text-slate-700">Settings</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 bg-slate-50 flex gap-4">
+                <button onclick="closeUserModal()" class="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-100 transition">CANCEL</button>
+                <button onclick="saveUser()" id="saveUserBtn" class="flex-1 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition">SAVE USER ACCOUNT</button>
+            </div>
+        </div>
+    </div>
+
+    </main>
+
+    <div id="toastContainer" class="fixed bottom-8 right-8 z-[100]"></div>
+
+    <script>
+        let initialSettings = {};
+
+        async function fetchSettings() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                console.log('Fetched Settings:', settings);
+
+                if (settings) {
+                    const extract = (v, def) => {
+                        if (v === undefined || v === null) return def;
+                        if (typeof v === 'object' && v.value !== undefined) return v.value;
+                        return v;
+                    };
+
+                    initialSettings = {
+                        bin_capacity: extract(settings.bin_capacity, 10),
+                        max_bin_weight: extract(settings.max_bin_weight, 500.0),
+                        max_bins: extract(settings.max_bins, 50)
+                    };
+
+                    document.getElementById('bin_capacity').value = initialSettings.bin_capacity;
+                    document.getElementById('max_bin_weight').value = initialSettings.max_bin_weight;
+                    document.getElementById('max_bins').value = initialSettings.max_bins;
+                }
+            } catch (err) {
+                console.error('Failed to fetch settings:', err);
+                showToast('Error', 'Failed to load settings from server.', 'error');
+            }
+        }
+
+        async function saveSettings() {
+            const bin_capacity = parseInt(document.getElementById('bin_capacity').value);
+            const max_bin_weight = parseFloat(document.getElementById('max_bin_weight').value);
+            const max_bins = parseInt(document.getElementById('max_bins').value);
+            const btn = document.getElementById('saveBtn');
+
+            // Validation logic from Flutter app
+            if (bin_capacity < (initialSettings.bin_capacity || 0)) {
+                showToast('Validation Error', `Roll capacity cannot be reduced below current (${initialSettings.bin_capacity})`, 'error');
+                return;
+            }
+            if (max_bins < (initialSettings.max_bins || 0)) {
+                showToast('Validation Error', `Bin count cannot be reduced below current (${initialSettings.max_bins})`, 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'SAVING...';
+
+            const payload = { bin_capacity, max_bin_weight, max_bins };
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    showToast('Settings Saved', 'System configuration updated successfully.');
+                    initialSettings = { ...payload }; // Update initial state for next validation
+                } else {
+                    showToast('Error', 'Failed to save settings.', 'error');
+                }
+            } catch (err) {
+                showToast('Error', 'System error while saving.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Apply System Changes';
+            }
+        }
+
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-slate-900' : 'bg-rose-600';
+
+            toast.className = `success-toast shadow-2xl p-6 rounded-2xl max-w-sm mb-4 ${bgClass} text-white`;
+            toast.innerHTML = `
+                <p class="font-black uppercase tracking-widest text-xs opacity-70 mb-1">${title}</p>
+                <p class="text-sm font-bold">${message}</p>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.5s ease-out';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Remove active class from all tabs
+            document.querySelectorAll('.settings-tab').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+            // Add active class to clicked tab
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        // --- USER & ROLE MANAGEMENT LOGIC ---
+        const userRole = localStorage.getItem('userRole');
+        let globalRoles = [];
+        
+        if (userRole === 'SUPER_ADMIN') {
+            document.getElementById('tab-role-mgmt').classList.remove('hidden');
+            document.getElementById('tab-user-mgmt').classList.remove('hidden');
+            fetchRoles();
+            fetchUsers();
+        } else {
+            // Hide management tabs for non-superadmin
+            document.getElementById('tab-role-mgmt').remove();
+            document.getElementById('tab-user-mgmt').remove();
+        }
+
+        // ROLE MANAGEMENT
+        function openRoleModal(role = null) {
+            const modal = document.getElementById('roleModal');
+            const card = document.getElementById('roleModalCard');
+            document.getElementById('roleModalTitle').innerText = role ? 'Edit Role Definition' : 'Define New Role';
+            document.getElementById('role_name_input').value = role ? role.name : '';
+            document.getElementById('role_name_input').disabled = !!role;
+            
+            const checkboxes = document.querySelectorAll('#roleModuleGrid input[type="checkbox"]');
+            const roleModules = role ? (role.modules || []) : [];
+            checkboxes.forEach(cb => cb.checked = roleModules.includes(cb.value));
+
+            modal.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('scale-95'), 10);
+        }
+
+        function closeRoleModal() {
+            const modal = document.getElementById('roleModal');
+            const card = document.getElementById('roleModalCard');
+            card.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        async function fetchRoles() {
+            try {
+                const response = await fetch('/api/roles');
+                const data = await response.json();
+                
+                if (Array.isArray(data)) {
+                    globalRoles = data;
+                } else {
+                    console.error('Expected roles array, got:', data);
+                    globalRoles = [];
+                }
+                
+                // Update Role Table
+                const tbody = document.getElementById('roleTableBody');
+                tbody.innerHTML = '';
+                globalRoles.forEach(role => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-indigo-50/30 transition';
+                    const modulesHtml = (role.modules || []).map(m => 
+                        `<span class="inline-block px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold mr-1 mb-1">${m}</span>`
+                    ).join('');
+                    
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-bold text-slate-700">${role.name}</td>
+                        <td class="px-6 py-4 max-w-md"><div class="flex flex-wrap">${modulesHtml || '<span class="text-slate-300 italic">No access</span>'}</div></td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick='openRoleModal(${JSON.stringify(role)})' class="p-2 text-slate-400 hover:text-indigo-600 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg></button>
+                                <button onclick="deleteRole('${role.name}')" class="p-2 text-slate-400 hover:text-rose-600 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Update User Role Selection Dropdown
+                const roleSelect = document.getElementById('user_role');
+                const currentVal = roleSelect.value;
+                roleSelect.innerHTML = '<option value="SUPER_ADMIN">SUPER ADMIN</option>';
+                globalRoles.forEach(r => {
+                    roleSelect.innerHTML += `<option value="${r.name}">${r.name}</option>`;
+                });
+                roleSelect.value = currentVal || 'ADMIN';
+            } catch (err) { console.error('Roles fetch error:', err); }
+        }
+
+        async function saveRole() {
+            const name = document.getElementById('role_name_input').value.trim().toUpperCase();
+            const modules = Array.from(document.querySelectorAll('#roleModuleGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+            
+            if(!name) return showToast('Error', 'Role name required', 'error');
+
+            const btn = document.getElementById('saveRoleBtn');
+            btn.disabled = true; btn.innerText = 'SAVING...';
+
+            try {
+                const response = await fetch('/api/roles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, modules })
+                });
+
+                if (response.ok) {
+                    showToast('Success', 'Role definition updated.');
+                    closeRoleModal();
+                    fetchRoles();
+                } else {
+                    const errorData = await response.json();
+                    showToast('Error', errorData.error || 'Failed to save role', 'error');
+                }
+            } catch (err) { 
+                showToast('Error', 'Server error while saving.', 'error');
+            } finally { 
+                btn.disabled = false; btn.innerText = 'SAVE ROLE DEF'; 
+            }
+        }
+
+        async function deleteRole(name) {
+            if(!confirm(`Delete role ${name}?`)) return;
+            await fetch(`/api/roles/${name}`, { method: 'DELETE' });
+            fetchRoles();
+        }
+
+        // USER MANAGEMENT SYNC
+        document.getElementById('user_role').addEventListener('change', (e) => {
+            const roleName = e.target.value;
+            const role = globalRoles.find(r => r.name === roleName);
+            if (role) {
+                const modules = role.modules || [];
+                document.querySelectorAll('#moduleGrid input[type="checkbox"]').forEach(cb => {
+                    cb.checked = modules.includes(cb.value);
+                });
+            } else if (roleName === 'SUPER_ADMIN') {
+                // Check all modules for super admin
+                document.querySelectorAll('#moduleGrid input[type="checkbox"]').forEach(cb => cb.checked = true);
+            }
+        });
+
+        function openUserModal(user = null) {
+            const modal = document.getElementById('userModal');
+            const card = document.getElementById('userModalCard');
+            document.getElementById('modalTitle').innerText = user ? 'Update Account' : 'Setup New Account';
+            
+            // Clear or fill fields
+            document.getElementById('user_name').value = user ? user.name : '';
+            document.getElementById('user_email').value = user ? user.email : '';
+            document.getElementById('user_email').disabled = !!user;
+            document.getElementById('user_phone').value = user ? (user.phone || '') : '';
+            document.getElementById('user_password').value = user ? user.password : '';
+            document.getElementById('user_role').value = user ? user.role : 'ADMIN';
+            
+            // Trigger custom dropdown update if needed
+            const select = document.getElementById('user_role');
+            select.dispatchEvent(new Event('change'));
+
+            // Checkboxes
+            const checkboxes = document.querySelectorAll('#moduleGrid input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = user ? (user.modules || []).includes(cb.value) : false;
+            });
+
+            modal.classList.remove('hidden');
+            setTimeout(() => card.classList.remove('scale-95'), 10);
+        }
+
+        function closeUserModal() {
+            const modal = document.getElementById('userModal');
+            const card = document.getElementById('userModalCard');
+            card.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '';
+
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    const modulesHtml = (user.modules || []).map(m => 
+                        `<span class="inline-block px-2 py-1 bg-slate-100 text-slate-600 rounded text-[10px] font-bold mr-1 mb-1">${m}</span>`
+                    ).join('') || '<span class="text-slate-300 italic text-[10px]">No modules</span>';
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-800">${user.name}</div>
+                            <div class="text-[10px] font-black text-orange-600">${user.role}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-xs text-slate-600 font-medium">${user.email}</div>
+                            <div class="text-[10px] text-slate-400">${user.phone || 'No phone'}</div>
+                        </td>
+                        <td class="px-6 py-4 max-w-xs">
+                             <div class="flex flex-wrap">${modulesHtml}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick='openUserModal(${JSON.stringify(user)})' class="p-2 text-slate-400 hover:text-orange-600 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                </button>
+                                <button onclick="deleteUser('${user.email}')" class="p-2 text-slate-400 hover:text-rose-600 transition">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error('Failed to fetch users:', err);
+            }
+        }
+
+        async function saveUser() {
+            const name = document.getElementById('user_name').value;
+            const email = document.getElementById('user_email').value;
+            const phone = document.getElementById('user_phone').value;
+            const password = document.getElementById('user_password').value;
+            const role = document.getElementById('user_role').value;
+            const modules = Array.from(document.querySelectorAll('#moduleGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+
+            if (!name || !email || !password) {
+                showToast('Missing Fields', 'Name, Email and Password are required.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('saveUserBtn');
+            btn.disabled = true;
+            btn.innerText = 'SAVING...';
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, password, role, modules })
+                });
+
+                if (response.ok) {
+                    showToast('Success', 'User account saved successfully.');
+                    closeUserModal();
+                    fetchUsers();
+                } else {
+                    showToast('Error', 'Failed to save user.', 'error');
+                }
+            } catch (err) {
+                showToast('Error', 'Server error while saving.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'SAVE USER ACCOUNT';
+            }
+        }
+
+        async function deleteUser(email) {
+            if (!confirm(`Are you sure you want to delete account ${email}?`)) return;
+
+            try {
+                const response = await fetch(`/api/users/${email}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showToast('Deleted', 'User account removed.');
+                    fetchUsers();
+                }
+            } catch (err) {
+                showToast('Error', 'Failed to delete user.', 'error');
+            }
+        }
+
+        fetchSettings();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Initializing Warehouse System</title>
+    <style>
+        :root {
+            --primary: #f97316;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --accent: #fb923c;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+        .container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .logo-box {
+            background: #ffffff;
+            border: 2px solid var(--primary);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .shimmer {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 60%,
+                transparent 100%
+            );
+            animation: shimmer 2s infinite;
+        }
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.1em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .loader-wrapper {
+            width: 320px;
+        }
+        .loader-bar {
+            height: 6px;
+            width: 100%;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loader-progress {
+            height: 100%;
+            width: 30%;
+            background: var(--primary);
+            border-radius: 10px;
+            position: absolute;
+            animation: moveProgress 1.5s infinite ease-in-out;
+        }
+        .status-text {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+            0% { transform: translate(-30%, -30%) rotate(0deg); }
+            100% { transform: translate(30%, 30%) rotate(0deg); }
+        }
+        @keyframes moveProgress {
+            0% { left: -30%; width: 30%; }
+            50% { left: 40%; width: 40%; }
+            100% { left: 100%; width: 30%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-box">
+            <div class="shimmer"></div>
+            <img src="logo.png" alt="Logo">
+        </div>
+        <div>
+            <h1>Yarn Tracking System</h1>
+            <div class="status-text">INITIALIZING WAREHOUSE ENGINE...</div>
+        </div>
+        <div class="loader-wrapper">
+            <div class="loader-bar">
+                <div class="loader-progress"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
