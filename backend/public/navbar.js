@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
     const userRole = localStorage.getItem('userRole');
+    const userName = localStorage.getItem('userName');
+    const userEmail = localStorage.getItem('userEmail');
 
     // Authentication Guard
     if (!userRole && currentPage !== 'login.html') {
@@ -69,13 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
-    const navbarHTML = `
+    const sidebarContent = `
     <nav id="app-navbar">
         <div class="nav-left">
-            
-            <a href="/index.html" class="nav-logo">
-                <div style="width: 32px; height: 32px; background: #0ea5e9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">Y</div>
-                <span>YarnTracker <span style="font-weight: 300; opacity: 0.7;">Pro</span></span>
+            <a href="/index.html" class="nav-logo" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">Y</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="color: var(--text-primary); font-weight: 800; font-size: 1.1rem; line-height: 1;">YarnTracker</span>
+                    <span style="color: var(--accent); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Professional</span>
+                </div>
             </a>
         </div>
         
@@ -83,60 +87,39 @@ document.addEventListener('DOMContentLoaded', () => {
             ${navItems.join('')}
         </div>
         
-        ${roleBadge}
+        <div class="nav-actions">
+            <div class="user-profile">
+                <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Current User</span>
+                <span style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">${userName || 'User'}</span>
+                <span style="font-size: 0.75rem; color: var(--accent); font-weight: 600;">${userRole ? userRole.replace('_', ' ') : 'Guest'}</span>
+            </div>
+            <button onclick="logout()" style="width: 100%; padding: 0.75rem; background: #fff1f2; color: #e11d48; border: none; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff1f2'">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Sign Out
+            </button>
+        </div>
     </nav>
     `;
 
-    const sidebarHTML = `
-    <!-- Global Side Drawer - outside all containers -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div id="side-drawer">
-        <div class="drawer-header">
-            <div class="nav-logo">
-                <div style="width: 32px; height: 32px; background: #0ea5e9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">Y</div>
-                <span>YarnTracker <span style="font-weight: 300; opacity: 0.7;">Pro</span></span>
-            </div>
-            <div class="drawer-close" onclick="toggleSidebar()">
-                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </div>
-        </div>
-        
-        <div class="drawer-nav">
-            <a href="/settings.html" class="drawer-link ${currentPage === 'settings.html' ? 'active' : ''}">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                Settings
-            </a>
-        </div>
-    </div>
-    `;
-
-    // Global toggle function
+    // Global toggle function (kept for mobile compatibility if needed)
     window.toggleSidebar = () => {
-        const drawer = document.getElementById('side-drawer');
-        const overlay = document.getElementById('sidebar-overlay');
-        if (drawer && overlay) {
-            drawer.classList.toggle('active');
-            overlay.classList.toggle('active');
-            document.body.style.overflow = drawer.classList.contains('active') ? 'hidden' : '';
-        }
+        const sidebar = document.getElementById('app-navbar');
+        if (sidebar) sidebar.classList.toggle('collapsed');
     };
 
-    // Injection Strategy: Use placeholder if available to prevent layout shift
+    // Injection Strategy
+    document.body.classList.add('has-sidebar');
     const placeholder = document.getElementById('navbar-placeholder');
     if (placeholder) {
-        placeholder.innerHTML = navbarHTML;
-        // Optionally replace the placeholder with the actual nav to keep DOM clean
+        placeholder.innerHTML = sidebarContent;
         const nav = placeholder.querySelector('nav');
         if (nav) {
             placeholder.parentNode.insertBefore(nav, placeholder);
             placeholder.remove();
         }
     } else {
-        document.body.insertAdjacentHTML('afterbegin', navbarHTML);
+        document.body.insertAdjacentHTML('afterbegin', sidebarContent);
     }
-
-    // Append sidebar elements to body
-    document.body.insertAdjacentHTML('beforeend', sidebarHTML);
 
     // Force Light Theme consistency
     document.documentElement.setAttribute('data-theme', 'light');

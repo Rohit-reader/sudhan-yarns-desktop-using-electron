@@ -1,118 +1,123 @@
-/* Global Navigation Styles */
+/* Global Navigation Styles - SIDEBAR VERSION */
 :root {
-    /* Light + Orange Theme (Default) */
+    /* Light + Orange Theme */
     --bg-color: #f8fafc;
     --surface-color: #ffffff;
     --glass-bg: rgba(255, 255, 255, 0.8);
-    --nav-bg: rgba(255, 255, 255, 0.9);
-    --nav-border: rgba(249, 115, 22, 0.2);
+    --nav-bg: #ffffff;
+    --nav-border: #e2e8f0;
     --accent: #f97316;
-    /* Orange-500 */
     --accent-hover: #ea580c;
-    /* Orange-600 */
     --text-primary: #1e293b;
     --text-secondary: #475569;
-    --border-color: rgba(249, 115, 22, 0.1);
+    --border-color: #f1f5f9;
+    --sidebar-width: 280px;
 }
 
 body {
     background-color: var(--bg-color) !important;
     color: var(--text-primary);
     margin: 0;
+    transition: padding 0.3s ease;
+}
+
+body.has-sidebar {
+    padding-left: var(--sidebar-width);
 }
 
 #navbar-placeholder {
-    height: 70px;
-    width: 100%;
-    background: var(--nav-bg);
-    border-bottom: 1px solid var(--nav-border);
+    display: none; /* No longer need height placeholder for top nav */
 }
 
 #app-navbar {
-    position: sticky;
+    position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    height: 70px;
+    bottom: 0;
+    width: var(--sidebar-width);
     background: var(--nav-bg);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--nav-border);
+    border-right: 1px solid var(--nav-border);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
+    flex-direction: column;
+    padding: 2rem 1.5rem;
     z-index: 1000;
     font-family: 'Outfit', sans-serif;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.02);
 }
 
 .nav-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: var(--accent);
-    font-weight: 700;
-    font-size: 1.25rem;
+    margin-bottom: 3rem;
+    padding-left: 0.5rem;
 }
 
 .nav-links {
     display: flex;
-    gap: 1.5rem;
-    align-items: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1;
 }
 
 .nav-item {
     text-decoration: none;
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.95rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    padding: 0.85rem 1.25rem; /* Slightly more side padding */
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1rem;
+    position: relative; /* For indicator */
+    overflow: hidden;
 }
 
 .nav-item:hover {
     color: var(--accent);
-    background: rgba(249, 115, 22, 0.05);
+    background: #fff7ed;
+    transform: scale(1.02); /* Subtle scale instead of shift */
 }
 
 .nav-item.active {
-    color: white !important;
-    background: var(--accent) !important;
+    color: var(--accent) !important; /* Keep orange text for active instead of white */
+    background: #fff7ed !important;
+    box-shadow: none;
+}
+
+/* Active Indicator Pill */
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 4px;
+    background: var(--accent);
+    border-radius: 0 4px 4px 0;
+}
+
+.nav-item svg {
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.nav-item:hover svg {
+    transform: rotate(-5deg); /* Playful micro-animation */
 }
 
 .nav-actions {
+    margin-top: auto;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
-.status-indicator {
+.user-profile {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 0.5rem;
-    font-size: 0.75rem;
-    color: #4ade80;
-    background: rgba(74, 222, 128, 0.1);
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    background: #4ade80;
-    border-radius: 50%;
-    box-shadow: 0 0 8px #4ade80;
 }
 
 @media (max-width: 768px) {
