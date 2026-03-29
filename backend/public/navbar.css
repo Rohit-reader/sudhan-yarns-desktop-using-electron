@@ -18,11 +18,26 @@ body {
     background-color: var(--bg-color) !important;
     color: var(--text-primary);
     margin: 0;
-    transition: padding 0.3s ease;
+    padding-left: var(--sidebar-width); /* Default to sidebar layout globally */
 }
 
-body.has-sidebar {
-    padding-left: var(--sidebar-width);
+/* Page Loading Bar */
+.progress-bar-container {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: 3px;
+    background: transparent;
+    z-index: 10001; /* Above sidebar */
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(to right, var(--accent), var(--accent-hover));
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.4);
+    transition: width 0.4s ease-out, opacity 0.3s ease;
 }
 
 #navbar-placeholder {
@@ -89,11 +104,17 @@ body.has-sidebar {
     content: '';
     position: absolute;
     left: 0;
-    top: 20%;
-    bottom: 20%;
+    top: 25%;
+    bottom: 25%;
     width: 4px;
     background: var(--accent);
     border-radius: 0 4px 4px 0;
+    animation: indicatorGrow 0.3s ease-out forwards;
+}
+
+@keyframes indicatorGrow {
+    from { transform: scaleY(0); opacity: 0; }
+    to { transform: scaleY(1); opacity: 1; }
 }
 
 .nav-item svg {
@@ -278,4 +299,20 @@ option:active {
 
 .menu-toggle:hover {
     background: rgba(0, 0, 0, 0.05);
+}
+
+/* Premium Entry Animations */
+@keyframes pageFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page-animate {
+    animation: pageFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

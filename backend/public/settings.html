@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings | Yarn Roll Tracker</title>
+    <title>Settings | Yarn Tracker Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -76,7 +76,7 @@
     <div id="navbar-placeholder"></div>
     <!-- Navbar injected here by navbar.js -->
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full flex gap-10">
+    <main class="flex-1 p-8 max-w-7xl mx-auto w-full flex gap-10 page-animate">
         <!-- Sidebar Navigation -->
         <aside class="w-72 shrink-0 space-y-4">
             <div class="glass-card p-4 sticky top-8">
@@ -542,11 +542,14 @@
                 // Update User Role Selection Dropdown
                 const roleSelect = document.getElementById('user_role');
                 const currentVal = roleSelect.value;
-                roleSelect.innerHTML = '<option value="SUPER_ADMIN">SUPER ADMIN</option>';
+                roleSelect.innerHTML = `
+                    <option value="" disabled selected>Select Role</option>
+                    <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                `;
                 globalRoles.forEach(r => {
                     roleSelect.innerHTML += `<option value="${r.name}">${r.name}</option>`;
                 });
-                roleSelect.value = currentVal || 'ADMIN';
+                if (currentVal) roleSelect.value = currentVal;
             } catch (err) { console.error('Roles fetch error:', err); }
         }
 

@@ -864,11 +864,24 @@ app.get('/api/notifications', async (req, res) => {
   try {
     const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
     const querySnapshot = await getDocs(q);
-    const notifications = querySnapshot.docs.map(doc => doc.data());
+    const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(notifications);
   } catch (error) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+app.delete('/api/notifications', async (req, res) => {
+  try {
+    const q = query(collection(db, 'notifications'));
+    const querySnapshot = await getDocs(q);
+    const deletePromises = querySnapshot.docs.map(d => deleteDoc(doc(db, 'notifications', d.id)));
+    await Promise.all(deletePromises);
+    res.json({ message: 'Notifications cleared' });
+  } catch (error) {
+    console.error('Error clearing notifications:', error);
+    res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
 

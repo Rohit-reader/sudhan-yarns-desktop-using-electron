@@ -77,8 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <a href="/index.html" class="nav-logo" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">
                 <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">Y</div>
                 <div style="display: flex; flex-direction: column;">
-                    <span style="color: var(--text-primary); font-weight: 800; font-size: 1.1rem; line-height: 1;">YarnTracker</span>
-                    <span style="color: var(--accent); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Professional</span>
+                    <span style="color: var(--text-primary); font-weight: 800; font-size: 1.1rem; line-height: 1;">Yarn Tracker</span>
+                    <span style="color: var(--accent); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Pro</span>
                 </div>
             </a>
         </div>
@@ -107,8 +107,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sidebar) sidebar.classList.toggle('collapsed');
     };
 
+    // Global Side Loading Progress Bar
+    const progressBarHTML = `
+    <div class="progress-bar-container">
+        <div id="progress-bar-fill" class="progress-bar-fill"></div>
+    </div>
+    `;
+    document.body.insertAdjacentHTML('afterbegin', progressBarHTML);
+    const progressFill = document.getElementById('progress-bar-fill');
+    
+    // Animate Progress Bar from 0 to 100 over 400ms
+    if (progressFill) {
+        setTimeout(() => {
+            progressFill.style.width = '100%';
+            setTimeout(() => {
+                progressFill.style.opacity = '0';
+                setTimeout(() => progressFill.parentElement.remove(), 400);
+            }, 500);
+        }, 50);
+    }
+
     // Injection Strategy
-    document.body.classList.add('has-sidebar');
     const placeholder = document.getElementById('navbar-placeholder');
     if (placeholder) {
         placeholder.innerHTML = sidebarContent;
@@ -120,6 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         document.body.insertAdjacentHTML('afterbegin', sidebarContent);
     }
+
+    // Global Page Animation injection
+    const main = document.querySelector('main');
+    if (main) main.classList.add('page-animate');
 
     // Force Light Theme consistency
     document.documentElement.setAttribute('data-theme', 'light');

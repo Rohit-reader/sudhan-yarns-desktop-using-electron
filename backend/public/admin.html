@@ -9,7 +9,7 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Approval Dashboard | Yarn Roll Tracker</title>
+    <title>Admin Approval Dashboard | Yarn Tracker Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -254,7 +254,7 @@
                         class="hidden absolute right-0 mt-4 w-80 glass-card bg-white shadow-2xl z-50 overflow-hidden">
                         <div class="p-4 border-b border-slate-100 flex justify-between items-center">
                             <span class="font-bold text-slate-800">Recent Alerts</span>
-                            <span class="text-xs text-blue-500 cursor-pointer">Clear All</span>
+                            <span class="text-xs text-blue-500 cursor-pointer" onclick="clearAllNotifications()">Clear All</span>
                         </div>
                         <div id="notifList" class="max-h-96 overflow-y-auto">
                             <div class="p-4 text-center text-gray-500 text-sm">No new alerts</div>
@@ -569,6 +569,18 @@
                 }
                 renderNotifications(notifs);
             } catch (err) { console.error(err); }
+        }
+
+        async function clearAllNotifications() {
+            if (!confirm('Are you sure you want to clear all notifications?')) return;
+            try {
+                const response = await fetch('/api/notifications', { method: 'DELETE' });
+                if (response.ok) {
+                    await fetchNotifications();
+                }
+            } catch (err) {
+                console.error('Error clearing notifications:', err);
+            }
         }
 
         function showToast(title, message) {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Approved Orders | Yarn Roll Tracker</title>
+    <title>Approved Orders | Yarn Tracker Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/navbar.css">
@@ -366,11 +366,8 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 pt-4 border-t border-slate-100">
-                        <p class="text-xs text-slate-400 mb-3 text-center">Approved on: <span class="font-semibold text-slate-500">${dateStr}</span></p>
-                        <button class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-200" onclick="alert('Order dispatch flow has successfully loaded details for ${order.order_id}. Actual roll state transition functionality can be integrated seamlessly.')">
-                            Dispatch Entire Order
-                        </button>
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+                        <p class="text-xs text-slate-400">Approved on: <span class="font-semibold text-slate-500">${dateStr}</span></p>
                     </div>
                 </div>
                 `;

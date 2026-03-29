@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Yarn Roll Tracker App</title>
+    <title>Login | Yarn Tracker Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -172,11 +172,11 @@
                         </path>
                     </svg>
                 </div>
-                <span class="font-bold tracking-wider text-sm uppercase">Yarn Roll Tracker App</span>
+                <span class="font-bold tracking-wider text-sm uppercase">Yarn Tracker Pro</span>
             </div>
 
             <div class="z-10 mt-12">
-                <h1 class="text-6xl font-bold mb-6 leading-tight">Yarn Roll Tracker<br>System</h1>
+                <h1 class="text-6xl font-bold mb-6 leading-tight">Yarn Tracker Pro</h1>
                 <p class="text-white/70 text-lg max-w-lg mb-12">
                     Enterprise-grade inventory tracking, warehouse management, and real-time distribution reporting in
                     one unified dashboard.
@@ -241,27 +241,32 @@
                 <form onsubmit="handleLogin(event)" class="space-y-6">
                     <div class="input-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="e.g. admin@yarntracker.com" required>
+                        <input type="email" id="email" placeholder="e.g. admin@yarntrackerpro.com" required>
                     </div>
 
                     <div class="input-group">
                         <div class="flex justify-between items-center mb-1">
                             <label for="password" class="m-0">Password</label>
-                            <a href="#" class="text-xs font-semibold text-orange-600 hover:text-orange-700">Forgot
-                                password?</a>
+
                         </div>
                         <div class="relative">
                             <input type="password" id="password" placeholder="Enter your password" required>
-                            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                            <button type="button" id="togglePassword"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                                 <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path id="eyePath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path id="eyePathBack" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    <path id="eyePath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path id="eyePathBack" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                    </path>
                                 </svg>
                             </button>
                         </div>
                     </div>
 
-                    <div id="error-message" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100 italic text-center">
+                    <div id="error-message"
+                        class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100 italic text-center">
                         Invalid credentials. Please try again.
                     </div>
 
@@ -274,14 +279,6 @@
                     </button>
                 </form>
 
-                <div class="role-hint">
-                    <p>Try these accounts:</p>
-                    <div class="mt-2 space-y-1">
-                        <div>Admin: <code>admin@yarntracker.com</code></div>
-                        <div>Dispatch: <code>dispatch@yarntracker.com</code></div>
-                        <div>Super: <code>superadmin@yarntracker.com</code></div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -297,7 +294,7 @@
         togglePassword.addEventListener('click', () => {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            
+
             if (type === 'text') {
                 // Change to eye-off icon or add a slash
                 eyeIcon.innerHTML = `
@@ -321,6 +318,7 @@
             try {
                 btn.disabled = true;
                 btn.innerHTML = 'Verifying...';
+                btn.style.background = '#F97316';
 
                 const response = await fetch('/api/login', {
                     method: 'POST',
@@ -336,10 +334,10 @@
                     localStorage.setItem('userEmail', user.email);
                     localStorage.setItem('userName', user.name);
                     localStorage.setItem('userModules', JSON.stringify(user.modules || []));
-                    
+
                     btn.innerHTML = 'Signing in...';
-                    btn.style.background = '#059669';
-                    
+                    btn.style.background = '#F97316';
+
                     setTimeout(() => {
                         if (user.role === 'DISPATCH') {
                             window.location.href = '/dispatched.html';
