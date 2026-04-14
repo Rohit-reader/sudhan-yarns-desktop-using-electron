@@ -763,14 +763,18 @@
             document.getElementById('old_user_email').value = user ? user.email : '';
             document.getElementById('user_phone').value = user ? (user.phone || '') : '';
             document.getElementById('user_password').value = user ? user.password : '';
-            document.getElementById('user_role').value = user ? user.role : '';
 
             // Email is always editable now
             document.getElementById('user_email').disabled = false;
 
             // Explicitly reset role dropdown for new users
             const select = document.getElementById('user_role');
-            select.value = user ? user.role : '';
+            if (user && user.role) {
+                select.value = user.role;
+            } else {
+                select.value = '';
+                select.selectedIndex = 0;
+            }
             select.dispatchEvent(new Event('change'));
 
             // Checkboxes

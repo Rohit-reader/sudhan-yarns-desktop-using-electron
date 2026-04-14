@@ -3,7 +3,14 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
-    asar: true,
+    asar: {
+      unpack: 'backend/**/*', // Extract entire backend folder including node_modules
+    },
+    files: [
+      'src/',
+      'backend/',
+      'package.json',
+    ],
   },
   rebuildConfig: {},
   makers: [
