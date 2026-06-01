@@ -285,16 +285,11 @@
         </div>
 
         <!-- Filters -->
-        <div class="glass-card p-4 mb-6 flex flex-wrap items-center gap-3">
-            <div class="relative" style="flex: 1; min-width: 250px;">
+        <div class="glass-card p-4 mb-6 flex flex-col gap-3 xl:flex-row xl:flex-nowrap xl:items-center">
+            <div class="relative flex-1 min-w-[280px]" style="min-width: 280px;">
                 <input type="text" id="adminSearch" placeholder="Search Customer or Order ID..."
-                    style="height: 42px; padding: 0 1rem 0 2.5rem;"
+                    style="height: 42px; padding: 0 1rem; min-width: 0;"
                     class="w-full border rounded-xl focus:ring-2 focus:ring-orange-500 outline-none box-sizing: border-box; background: white;">
-                <svg class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none"
-                    stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
             </div>
 
             <select id="typeFilter" style="height: 42px; min-width: 150px; max-width: 200px;"
@@ -732,14 +727,14 @@
                 const isApproved = order.status === 'APPROVED';
 
                 return `
-                <div class="glass-card p-6 pr-12 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 relative group transition-all duration-300 ${isApproved ? 'cursor-pointer' : ''}" 
+                <div class="glass-card p-6 pr-12 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0 relative group transition-all duration-300 ${isApproved ? 'cursor-pointer' : ''}"
                      ${isApproved ? `onclick="openOrderModal('${order.id}')"` : ''}>
                     <!-- Individual Delete Icon -->
-                    <button onclick="event.stopPropagation(); deleteOrder('${order.id}')" 
+                    <button onclick="event.stopPropagation(); deleteOrder('${order.id}')"
                         class="absolute top-4 right-4 p-2 text-slate-300 hover:text-rose-500 transition-colors md:opacity-0 group-hover:opacity-100"
                         title="Delete Order">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                             </path>
                         </svg>
@@ -772,16 +767,16 @@
                     ${order.status === 'PENDING' ? `
                     <div class="flex items-center gap-3">
                         <!-- Approve (Tick) icon -->
-                        <button onclick="event.stopPropagation(); approveOrder('${order.id}')" 
+                        <button onclick="event.stopPropagation(); approveOrder('${order.id}')"
                             class="p-3 bg-emerald-100 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm hover:shadow-emerald-200 active:scale-90"
                             title="Approve & Reserve">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
                             </svg>
                         </button>
-                        
+
                         <!-- Reject (X) icon -->
-                        <button onclick="event.stopPropagation(); deleteOrder('${order.id}')" 
+                        <button onclick="event.stopPropagation(); deleteOrder('${order.id}')"
                             class="p-3 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all shadow-sm hover:shadow-rose-200 active:scale-90"
                             title="Reject Order">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -957,7 +952,7 @@
 
             const racksHtml = Object.entries(rackGroups).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true})).map(([rId, bins]) => {
                 const sortedBins = Object.entries(bins).sort((a,b)=>a[0].localeCompare(b[0],undefined,{numeric:true}));
-                
+
                 const shelfRows = [];
                 const binsPerShelf = 5;
                 for (let i = 0; i < sortedBins.length; i += binsPerShelf) {
@@ -965,7 +960,7 @@
                     const binHtml = shelf.map(([bId, allocs]) => {
                         const allocsJsonStr = JSON.stringify(allocs).replace(/"/g, '&quot;');
                         return `
-                        <div class="bin-box group ring-2 ring-orange-400 ring-offset-1 z-20 hover:scale-105 transition-transform" 
+                        <div class="bin-box group ring-2 ring-orange-400 ring-offset-1 z-20 hover:scale-105 transition-transform"
                              onclick="openDetailsModal('${rId}', '${bId}', ${allocsJsonStr})"
                              title="Click to view details">
                             <div class="flex flex-col items-center">
@@ -1024,7 +1019,7 @@
             document.getElementById('modal-bin-total').textContent = `${rolls.length} Rolls`;
 
             const tbody = document.getElementById('modal-bin-content');
-            
+
             if (rolls.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500 font-medium bg-slate-50">Bin is empty.</td></tr>';
             } else {
@@ -1050,7 +1045,7 @@
             modal.classList.add('open');
             // Keep body hidden overflow from order modal, just ensure it stays
             document.body.style.overflow = 'hidden';
-            
+
             // Prevent order modal from closing by stopping propagation dynamically isn't needed
             // since this is a separate div overlay
         }
@@ -1068,7 +1063,7 @@
         });
 
         fetchData();
-        setInterval(fetchData, 5000); 
+        setInterval(fetchData, 5000);
     </script>
 </body>
 

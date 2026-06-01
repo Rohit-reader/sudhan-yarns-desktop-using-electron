@@ -171,13 +171,22 @@ const startBackend = () => {
   let backendCwd;
   
   if (app.isPackaged) {
-    const appPath = app.getAppPath();
-    backendPath = path.join(appPath, 'backend', 'server.js');
-    backendCwd = path.join(appPath, 'backend');
-  } else {
-    backendPath = path.join(__dirname, '..', 'backend', 'server.js');
-    backendCwd = path.join(__dirname, '..', 'backend');
-  }
+  backendPath = path.join(
+    process.resourcesPath,
+    'app.asar.unpacked',
+    'backend',
+    'server.js'
+  );
+
+  backendCwd = path.join(
+    process.resourcesPath,
+    'app.asar.unpacked',
+    'backend'
+  );
+} else {
+  backendPath = path.join(__dirname, '..', 'backend', 'server.js');
+  backendCwd = path.join(__dirname, '..', 'backend');
+}
 
   console.log('🚀 Starting backend server...');
   console.log(`   Backend path: ${backendPath}`);
