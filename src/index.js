@@ -139,7 +139,14 @@ const createMainWindow = () => {
       </html>
     `;
     
-    mainWindow.webContents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHTML)}`);
+    const errorHtmlPath = path.join(app.getPath('userData'), 'error.html');
+    try {
+      fs.writeFileSync(errorHtmlPath, errorHTML, 'utf-8');
+      mainWindow.loadFile(errorHtmlPath);
+    } catch (e) {
+      console.error('Failed to write error page to disk:', e);
+      mainWindow.webContents.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHTML)}`);
+    }
   });
 
   mainWindow.once('ready-to-show', () => {
@@ -197,39 +204,27 @@ const startBackend = () => {
   try {
     const { execSync } = require('child_process');
     
-    // First try: Use the Node.js that's running Electron itself
+    // First try: Use system node via PowerShell (Get-Command)
     try {
-      nodePath = process.execPath;
-      if (fs.existsSync(nodePath)) {
-        console.log(`✅ Using current Node.js: ${nodePath}`);
-        backendLogs.push(`Using Electron's Node.js: ${nodePath}`);
-      } else {
-        nodePath = null;
+      const result = execSync('powershell -NoProfile -Command "Get-Command node -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source"', { 
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'ignore'],
+        timeout: 5000
+      }).toString().trim();
+      
+      if (result && result.length > 0) {
+        const pathCheck = result.split('\n')[0].trim();
+        if (fs.existsSync(pathCheck)) {
+          nodePath = pathCheck;
+          console.log(`✅ Found system Node.js via PowerShell: ${nodePath}`);
+          backendLogs.push(`Found system Node.js via PowerShell: ${nodePath}`);
+        }
       }
     } catch (e) {
-      console.log('⚠️ Could not use process.execPath');
+      console.log('⚠️ Could not find node via PowerShell');
     }
     
-    // Second try: Use PowerShell's Get-Command which works better than where
-    if (!nodePath) {
-      try {
-        const result = execSync('powershell -NoProfile -Command "Get-Command node -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source"', { 
-          encoding: 'utf-8',
-          stdio: ['pipe', 'pipe', 'ignore'],
-          timeout: 5000
-        }).toString().trim();
-        
-        if (result && result.length > 0) {
-          nodePath = result.split('\n')[0].trim();
-          console.log(`✅ Found Node.js via PowerShell: ${nodePath}`);
-          backendLogs.push(`Found Node.js via PowerShell: ${nodePath}`);
-        }
-      } catch (e) {
-        console.log('⚠️ Could not find node via PowerShell');
-      }
-    }
-    
-    // Third try: Use cmd.exe to find node
+    // Second try: Use cmd.exe to find node
     if (!nodePath) {
       try {
         const result = execSync('cmd /c where node', { 
@@ -239,16 +234,19 @@ const startBackend = () => {
         }).toString().trim();
         
         if (result) {
-          nodePath = result.split('\n')[0]; // Get first result
-          console.log(`✅ Found Node.js via cmd: ${nodePath}`);
-          backendLogs.push(`Found Node.js via cmd: ${nodePath}`);
+          const pathCheck = result.split('\n')[0].trim();
+          if (fs.existsSync(pathCheck)) {
+            nodePath = pathCheck;
+            console.log(`✅ Found system Node.js via cmd: ${nodePath}`);
+            backendLogs.push(`Found system Node.js via cmd: ${nodePath}`);
+          }
         }
       } catch (e) {
         console.log('⚠️ Could not find node via cmd where');
       }
     }
     
-    // Fallback: Try common paths and PATH environment variable
+    // Third try: Try common paths and PATH environment variable
     if (!nodePath) {
       const commonPaths = [
         'D:\\nvmnode\\nodejs\\node.exe',
@@ -273,6 +271,21 @@ const startBackend = () => {
           backendLogs.push(`Found Node.js at: ${nodePath}`);
           break;
         }
+      }
+    }
+    
+    // Fourth try / Fallback: Use the Electron process executable (which works, but might have firewall blocks)
+    if (!nodePath) {
+      try {
+        nodePath = process.execPath;
+        if (fs.existsSync(nodePath)) {
+          console.log(`✅ Using Electron's Node.js as fallback: ${nodePath}`);
+          backendLogs.push(`Using Electron's Node.js as fallback: ${nodePath}`);
+        } else {
+          nodePath = null;
+        }
+      } catch (e) {
+        console.log('⚠️ Could not use process.execPath');
       }
     }
     
@@ -325,8 +338,12 @@ const startBackend = () => {
       cwd: backendCwd,
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
-      env: { ...process.env, NODE_ENV: 'production' },
-      shell: true  // Use shell=true for better environment inheritance on Windows
+      env: { 
+        ...process.env, 
+        NODE_ENV: 'production',
+        ELECTRON_RUN_AS_NODE: '1'
+      },
+      shell: false
     });
 
     if (!serverProcess) {

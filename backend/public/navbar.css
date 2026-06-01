@@ -12,6 +12,7 @@
     --text-secondary: #475569;
     --border-color: #f1f5f9;
     --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
 }
 
 body {
@@ -19,6 +20,11 @@ body {
     color: var(--text-primary);
     margin: 0;
     padding-left: var(--sidebar-width); /* Default to sidebar layout globally */
+    transition: padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.sidebar-collapsed {
+    padding-left: var(--sidebar-collapsed-width) !important;
 }
 
 /* Page Loading Bar */
@@ -30,6 +36,11 @@ body {
     height: 3px;
     background: transparent;
     z-index: 10001; /* Above sidebar */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-bar-container.sidebar-collapsed {
+    left: var(--sidebar-collapsed-width) !important;
 }
 
 .progress-bar-fill {
@@ -58,6 +69,7 @@ body {
     z-index: 1000;
     font-family: 'Outfit', sans-serif;
     box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-left {
@@ -338,4 +350,64 @@ option:active {
 
 .page-animate {
     animation: pageFadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Collapsed Sidebar Styles */
+#app-navbar.collapsed {
+    width: var(--sidebar-collapsed-width);
+    padding: 2rem 0.75rem;
+}
+
+#app-navbar.collapsed .nav-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-left: 0;
+}
+
+#app-navbar.collapsed .logo-text {
+    display: none !important;
+}
+
+#app-navbar.collapsed .nav-item {
+    padding: 0.85rem 0;
+    justify-content: center;
+    gap: 0;
+}
+
+#app-navbar.collapsed .nav-item .nav-label {
+    display: none !important;
+}
+
+#app-navbar.collapsed .user-profile {
+    display: none !important;
+}
+
+#app-navbar.collapsed .logout-text {
+    display: none !important;
+}
+
+#app-navbar.collapsed .nav-actions button {
+    padding: 0.75rem 0 !important;
+    justify-content: center;
+    border-radius: 50% !important;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+}
+
+#app-navbar.collapsed .nav-actions {
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Toggle Button Icon Rotation */
+#app-navbar.collapsed .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.toggle-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

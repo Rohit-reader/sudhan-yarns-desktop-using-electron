@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             navItems.push(`
             <a href="${url}" class="nav-item ${currentPage === url.replace('/', '') || (url === '/index.html' && currentPage === '') ? 'active' : ''}">
                 ${icon}
-                ${name}
+                <span class="nav-label">${name}</span>
             </a>`);
         }
     };
@@ -97,16 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `;
 
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        document.body.classList.add('sidebar-collapsed');
+    }
+
     const sidebarContent = `
-    <nav id="app-navbar">
-        <div class="nav-left">
+    <nav id="app-navbar" class="${isCollapsed ? 'collapsed' : ''}">
+        <div class="nav-left" style="display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
             <a href="/index.html" class="nav-logo" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem;">
-                <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);">Y</div>
-                <div style="display: flex; flex-direction: column;">
+                <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); flex-shrink: 0;">Y</div>
+                <div class="logo-text" style="display: flex; flex-direction: column;">
                     <span style="color: var(--text-primary); font-weight: 800; font-size: 1.1rem; line-height: 1;">Yarn Tracker</span>
                     <span style="color: var(--accent); font-weight: 500; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Pro</span>
                 </div>
             </a>
+            <button id="sidebar-toggle" style="background: transparent; border: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.color='var(--accent)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)';">
+                <!-- Chevron/Back Icon -->
+                <svg class="toggle-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
         </div>
         
         <div class="nav-links">
@@ -121,26 +132,49 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <button onclick="logout()" style="width: 100%; padding: 0.75rem; background: #fff1f2; color: #e11d48; border: none; border-radius: 10px; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseover="this.style.background='#ffe4e6'" onmouseout="this.style.background='#fff1f2'">
                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                Sign Out
+                <span class="logout-text">Sign Out</span>
             </button>
         </div>
     </nav>
     `;
 
-    // Global toggle function (kept for mobile compatibility if needed)
+    // Global toggle function (handles toggling class and persistent state)
     window.toggleSidebar = () => {
         const sidebar = document.getElementById('app-navbar');
-        if (sidebar) sidebar.classList.toggle('collapsed');
+        const body = document.body;
+        const progressContainer = document.querySelector('.progress-bar-container');
+        if (sidebar) {
+            const willCollapse = !sidebar.classList.contains('collapsed');
+            if (willCollapse) {
+                sidebar.classList.add('collapsed');
+                body.classList.add('sidebar-collapsed');
+                if (progressContainer) progressContainer.classList.add('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', 'true');
+            } else {
+                sidebar.classList.remove('collapsed');
+                body.classList.remove('sidebar-collapsed');
+                if (progressContainer) progressContainer.classList.remove('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+        }
     };
 
-    // Global Side Loading Progress Bar
+    // Global Side Loading Progress Bar (takes collapsed state into account)
     const progressBarHTML = `
-    <div class="progress-bar-container">
+    <div class="progress-bar-container ${isCollapsed ? 'sidebar-collapsed' : ''}">
         <div id="progress-bar-fill" class="progress-bar-fill"></div>
     </div>
     `;
     document.body.insertAdjacentHTML('afterbegin', progressBarHTML);
     const progressFill = document.getElementById('progress-bar-fill');
+    
+    // Attach event listener to sidebar toggle button
+    setTimeout(() => {
+        const toggleButton = document.getElementById('sidebar-toggle');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', window.toggleSidebar);
+        }
+    }, 0);
     
     // Animate Progress Bar from 0 to 100 over 400ms
     if (progressFill) {
