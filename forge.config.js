@@ -6,6 +6,9 @@ module.exports = {
     asar: {
       unpack: 'backend/**/*', // Extract entire backend folder including node_modules
     },
+    extraResource: [
+      'backend',
+    ],
     files: [
       'src/',
       'backend/',

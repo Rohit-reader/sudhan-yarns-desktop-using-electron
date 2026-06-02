@@ -14,6 +14,27 @@ let mainWindow;
 let serverProcess;
 let backendLogs = []; // Store backend logs to display if there's an error
 
+const resolveBackendPaths = () => {
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, 'backend', 'server.js'),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js'),
+      ]
+    : [path.join(__dirname, '..', 'backend', 'server.js')];
+
+  for (const backendPath of candidates) {
+    const backendCwd = path.dirname(backendPath);
+    if (fs.existsSync(backendPath) && fs.existsSync(backendCwd)) {
+      return { backendPath, backendCwd };
+    }
+  }
+
+  return {
+    backendPath: candidates[0],
+    backendCwd: path.dirname(candidates[0]),
+  };
+};
+
 const createSplashWindow = () => {
   splashWindow = new BrowserWindow({
     width: 600,
@@ -166,27 +187,7 @@ const createMainWindow = () => {
 };
 
 const startBackend = () => {
-  // Resolve backend path - backend is unpacked from asar in packaged builds
-  let backendPath;
-  let backendCwd;
-  
-  if (app.isPackaged) {
-  backendPath = path.join(
-    process.resourcesPath,
-    'app.asar.unpacked',
-    'backend',
-    'server.js'
-  );
-
-  backendCwd = path.join(
-    process.resourcesPath,
-    'app.asar.unpacked',
-    'backend'
-  );
-} else {
-  backendPath = path.join(__dirname, '..', 'backend', 'server.js');
-  backendCwd = path.join(__dirname, '..', 'backend');
-}
+  const { backendPath, backendCwd } = resolveBackendPaths();
 
   console.log('🚀 Starting backend server...');
   console.log(`   Backend path: ${backendPath}`);
@@ -196,7 +197,13 @@ const startBackend = () => {
   // Verify backend files exist
   try {
     if (!fs.existsSync(backendPath)) {
-      throw new Error(`Backend server.js not found at: ${backendPath}`);
+      const checkedPaths = app.isPackaged
+        ? [
+            path.join(process.resourcesPath, 'backend', 'server.js'),
+            path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js'),
+          ]
+        : [backendPath];
+      throw new Error(`Backend server.js not found. Checked: ${checkedPaths.join(', ')}`);
     }
     if (!fs.existsSync(backendCwd)) {
       throw new Error(`Backend directory not found at: ${backendCwd}`);
