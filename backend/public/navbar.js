@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Role-based Access Control
     const accessMap = {
-        'SUPER_ADMIN': ['index.html', 'admin.html', 'dashboard.html', 'gallery.html', 'dispatched.html', 'settings.html', 'bulk_intake.html', 'details.html', 'inventory_dashboard.html', 'approved_orders.html'],
-        'ADMIN': ['index.html', 'admin.html', 'settings.html', 'details.html', 'inventory_dashboard.html', 'dispatched.html', 'approved_orders.html'],
+        'SUPER_ADMIN': ['index.html', 'admin.html', 'dashboard.html', 'gallery.html', 'dispatched.html', 'settings.html', 'bulk_intake.html', 'details.html', 'inventory_dashboard.html', 'approved_orders.html', 'updates.html'],
+        'ADMIN': ['index.html', 'admin.html', 'settings.html', 'details.html', 'inventory_dashboard.html', 'dispatched.html', 'approved_orders.html', 'updates.html'],
         'DISPATCH': ['dispatched.html', 'details.html', 'approved_orders.html']
     };
 
@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addNav('QR Gallery', '/gallery.html', '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>', ['SUPER_ADMIN']);
     addNav('Dispatched', '/dispatched.html', '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 014-4h4m0 0l-4-4m4 4l-4 4m-5 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-7a2 2 0 012-2h2a2 2 0 012-2v3"></path></svg>', ['SUPER_ADMIN', 'ADMIN', 'DISPATCH']);
     addNav('Settings', '/settings.html', '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>', ['SUPER_ADMIN', 'ADMIN']);
+    addNav('App Updates', '/updates.html', '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>', ['SUPER_ADMIN', 'ADMIN']);
 
     window.logout = function() {
         localStorage.removeItem('userRole');
@@ -226,6 +227,76 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addedSelects.length > 0) setupCustomDropdowns();
     });
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // --- Targeted Real-time Global Notifications ---
+    let lastSeenNotifId = localStorage.getItem('lastSeenNotifId');
+
+    function showGlobalToast(title, message, type = 'info') {
+        let container = document.getElementById('global-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'global-toast-container';
+            container.style.cssText = 'position: fixed; top: 90px; right: 24px; z-index: 2147483647; display: flex; flex-direction: column; gap: 12px; pointer-events: none;';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'glass-card success-toast';
+        toast.style.cssText = 'pointer-events: auto; background: white; border-left: 4px solid #f97316; padding: 16px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; justify-content: space-between; align-items: start; min-width: 300px; max-width: 350px; transition: all 0.3s ease-out;';
+        
+        if (type === 'success') {
+            toast.style.borderLeftColor = '#10b981';
+        } else if (type === 'error') {
+            toast.style.borderLeftColor = '#ef4444';
+        }
+
+        toast.innerHTML = `
+            <div style="flex: 1; padding-right: 8px;">
+                <h4 style="margin: 0 0 4px 0; font-weight: 700; color: #1e293b; font-size: 0.9rem;">🔔 ${title}</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.8rem; font-weight: 500; line-height: 1.4;">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 0; font-size: 0.8rem; font-weight: bold; margin-left: 12px;">✕</button>
+        `;
+
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            toast.style.transition = 'all 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 5500);
+    }
+
+    async function checkGlobalNotifications() {
+        if (!userEmail) return;
+        try {
+            const resp = await fetch(`/api/notifications?email=${encodeURIComponent(userEmail)}&role=${encodeURIComponent(userRole || '')}`);
+            if (!resp.ok) return;
+            const notifs = await resp.json();
+            if (notifs && notifs.length > 0) {
+                const latest = notifs[0];
+                if (latest.id !== lastSeenNotifId) {
+                    let type = 'info';
+                    if (latest.type === 'ACCESS_GRANTED') {
+                        type = 'success';
+                    } else if (latest.type === 'ACCESS_REJECTED') {
+                        type = 'error';
+                    }
+                    showGlobalToast(latest.title, latest.message, type);
+                    lastSeenNotifId = latest.id;
+                    localStorage.setItem('lastSeenNotifId', lastSeenNotifId);
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching global notifications:', e);
+        }
+    }
+
+    // Check notifications on startup and every 8 seconds for real-time alerts
+    if (currentPage !== 'login.html') {
+        setTimeout(checkGlobalNotifications, 1000);
+        setInterval(checkGlobalNotifications, 8000);
+    }
 });
 
 /**

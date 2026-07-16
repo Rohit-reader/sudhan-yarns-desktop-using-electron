@@ -194,6 +194,11 @@
                 <p class="text-slate-500 mt-2 text-lg">Orders ready for dispatch unit to process</p>
             </div>
             <div class="flex items-center gap-3">
+                <span id="access-status-badge" class="hidden text-xs px-3 py-1.5 rounded-lg font-bold"></span>
+                <button id="request-access-btn" onclick="requestAccess()"
+                    class="hidden h-[42px] px-4 rounded-lg bg-orange-600 text-white font-bold hover:bg-orange-700 transition-all active:scale-95 shadow-sm">
+                    Request Access
+                </button>
                 <button onclick="fetchApprovedOrders()"
                     class="h-[42px] w-[42px] rounded-lg border border-slate-200 bg-white cursor-pointer text-slate-600 flex items-center justify-center p-0 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
                     <svg id="refresh-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,11 +279,19 @@
             const icon = document.getElementById('refresh-icon');
             if (icon) icon.classList.add('animate-spin');
 
-            try {
-                const response = await fetch('/api/approved-orders');
-                const orders = await response.json();
-                renderApprovedOrders(orders);
-            } catch (error) {
+                try {
+                    const role = localStorage.getItem('userRole') || '';
+                    const email = localStorage.getItem('userEmail') || '';
+                    const response = await fetch('/api/approved-orders', {
+                        headers: {
+                            'x-user-role': role,
+                            'x-user-email': email
+                        }
+                    });
+                    const orders = await response.json();
+                    renderApprovedOrders(orders);
+                    await checkAccessRequestStatus();
+                } catch (error) {
                 console.error('Failed to fetch:', error);
                 document.getElementById('approved-orders-grid').innerHTML = '<div class="col-span-full text-center py-8 text-rose-500 bg-rose-50 rounded-xl border border-rose-200">Failed to load approved orders.</div>';
             } finally {
@@ -290,7 +303,17 @@
             const grid = document.getElementById('approved-orders-grid');
 
             if (orders.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">No active approved orders waiting for dispatch.</div>';
+                    const role = localStorage.getItem('userRole') || '';
+                    const email = localStorage.getItem('userEmail') || '';
+                    if (role !== 'SUPER_ADMIN') {
+                        grid.innerHTML = `
+                            <div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
+                                <div class="mb-3">No approved orders within the configured access window.</div>
+                                <button onclick="requestAccess()" class="px-4 py-2 bg-orange-600 text-white rounded-lg">Request Temporary Access</button>
+                            </div>`;
+                    } else {
+                        grid.innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">No active approved orders waiting for dispatch.</div>';
+                    }
                 return;
             }
 
@@ -415,6 +438,71 @@
             const modal = document.getElementById('bin-modal');
             modal.classList.remove('open');
             document.body.style.overflow = '';
+        }
+
+        async function requestAccess() {
+            const email = localStorage.getItem('userEmail');
+            const name = localStorage.getItem('userName') || '';
+            if (!email) {
+                alert('You must be logged in to request access.');
+                return;
+            }
+            try {
+                const resp = await fetch('/api/approved-orders/request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, name, reason: 'Temporary access to Approved Orders' })
+                });
+                if (resp.ok) {
+                    document.getElementById('approved-orders-grid').innerHTML = '<div class="col-span-full text-center py-16 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">Request submitted to Super Admin. You will be notified when approved.</div>';
+                    await checkAccessRequestStatus();
+                } else {
+                    const j = await resp.json();
+                    alert('Failed to submit request: ' + (j.error || resp.statusText));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to submit request');
+            }
+        }
+
+        async function checkAccessRequestStatus() {
+            const role = localStorage.getItem('userRole') || '';
+            const email = localStorage.getItem('userEmail') || '';
+            if (role === 'SUPER_ADMIN') return;
+
+            try {
+                const resp = await fetch('/api/approved-orders/requests');
+                const reqs = await resp.json();
+                const myReq = reqs.find(r => r.email === email.toLowerCase() && r.status === 'PENDING');
+                
+                const btn = document.getElementById('request-access-btn');
+                const badge = document.getElementById('access-status-badge');
+                
+                if (btn) btn.classList.remove('hidden');
+                
+                if (myReq) {
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.innerText = 'Request Sent';
+                        btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                    if (badge) {
+                        badge.classList.remove('hidden');
+                        badge.innerText = 'Access Request Pending';
+                        badge.className = 'text-xs px-3 py-1.5 rounded-lg font-bold bg-amber-100 text-amber-700';
+                    }
+                } else {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = 'Request Access';
+                        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    if (badge) badge.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error('Error checking access requests:', e);
+            }
         }
 
     </script>

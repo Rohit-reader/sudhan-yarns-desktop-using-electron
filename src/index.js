@@ -1,7 +1,8 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -438,6 +439,103 @@ const checkServerHealth = () => {
     poll();
   });
 };
+
+// --- AUTO UPDATER / CHECK FOR UPDATES IPC CHANNELS ---
+
+const downloadFile = (url, dest, onProgress) => {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith('https') ? https : http;
+    const options = {
+      headers: {
+        'User-Agent': 'Electron-YarnRollTracker-Updater'
+      }
+    };
+    
+    protocol.get(url, options, (response) => {
+      // Handle redirects
+      if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
+        const redirectUrl = response.headers.location;
+        if (redirectUrl) {
+          downloadFile(redirectUrl, dest, onProgress).then(resolve).catch(reject);
+          return;
+        }
+      }
+      
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to download: Status Code ${response.statusCode}`));
+        return;
+      }
+      
+      const totalBytes = parseInt(response.headers['content-length'], 10) || 0;
+      let downloadedBytes = 0;
+      
+      const file = fs.createWriteStream(dest);
+      response.pipe(file);
+      
+      response.on('data', (chunk) => {
+        downloadedBytes += chunk.length;
+        if (totalBytes > 0) {
+          const progress = Math.round((downloadedBytes / totalBytes) * 100);
+          onProgress(progress);
+        }
+      });
+      
+      file.on('finish', () => {
+        file.close(() => resolve(dest));
+      });
+      
+      file.on('error', (err) => {
+        fs.unlink(dest, () => reject(err));
+      });
+    }).on('error', (err) => {
+      fs.unlink(dest, () => reject(err));
+    });
+  });
+};
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+ipcMain.handle('install-update', async (event, updateDetails) => {
+  const { downloadUrl } = updateDetails;
+  if (!downloadUrl) {
+    return { success: false, error: 'No download URL provided' };
+  }
+  
+  const tempPath = path.join(app.getPath('temp'), 'YarnRollTrackerSetup.exe');
+  console.log(`📥 Downloading update from ${downloadUrl} to ${tempPath}...`);
+  
+  try {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
+    
+    await downloadFile(downloadUrl, tempPath, (progress) => {
+      event.sender.send('download-progress', progress);
+    });
+    
+    console.log('✅ Download complete! Launching installer...');
+    
+    // Spawn the installer and quit
+    const child = spawn(tempPath, [], {
+      detached: true,
+      stdio: 'ignore',
+      shell: true
+    });
+    child.unref();
+    
+    console.log('🚪 Quitting application to allow update installation...');
+    setTimeout(() => {
+      app.quit();
+    }, 1500);
+    
+    return { success: true };
+  } catch (err) {
+    console.error('❌ Update failed:', err);
+    return { success: false, error: err.message };
+  }
+});
 
 app.whenReady().then(async () => {
   createSplashWindow();

@@ -30,6 +30,23 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
+// --- System Settings Helpers ---
+const SYSTEM_SETTINGS_COLLECTION = 'system_settings';
+
+async function getApprovedOrdersSettings() {
+  try {
+    const ref = doc(db, SYSTEM_SETTINGS_COLLECTION, 'approved_orders');
+    const snap = await getDoc(ref);
+    if (snap.exists()) return snap.data();
+    const defaults = { time_limit_days: 4, admitted: [] };
+    await setDoc(ref, defaults);
+    return defaults;
+  } catch (e) {
+    console.error('Error reading approved orders settings:', e);
+    return { time_limit_days: 4, admitted: [] };
+  }
+}
+
 // --- USER MANAGEMENT & AUTHENTICATION ---
 // Initialize Default Super Admin if no users exist
 const initSuperAdmin = async () => {
@@ -604,9 +621,32 @@ app.post('/api/orders', async (req, res) => {
 // 2. Get all orders
 app.get('/api/orders', async (req, res) => {
   try {
+    const userRole = (req.headers['x-user-role'] || req.query.role || '').toUpperCase();
+    const userEmail = (req.headers['x-user-email'] || req.query.email || '').toLowerCase();
+
     const q = query(ordersCollection, orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
-    const orders = querySnapshot.docs.map(doc => doc.data());
+    let orders = querySnapshot.docs.map(doc => doc.data());
+
+    // Filter approved orders for non-superadmins based on time limit days setting
+    if (userRole !== 'SUPER_ADMIN') {
+      const settings = await getApprovedOrdersSettings();
+      const days = parseInt(settings.time_limit_days || 4, 10) || 4;
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      // Check if user has an admitted entry
+      const admittedEntry = (settings.admitted || []).find(a => String(a.email || '').toLowerCase() === userEmail);
+      const isAdmitted = Boolean(admittedEntry && (!admittedEntry.expires_at || new Date(admittedEntry.expires_at) > new Date()));
+
+      if (!isAdmitted) {
+        orders = orders.filter(o => {
+          if (o.status !== 'APPROVED') return true; // keep pending/other orders
+          const approvedAt = new Date(o.approvedAt || o.approved_at || 0);
+          return approvedAt >= cutoff;
+        });
+      }
+    }
+
     res.json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -616,12 +656,172 @@ app.get('/api/orders', async (req, res) => {
 
 app.get('/api/approved-orders', async (req, res) => {
   try {
+    // Accept role/email via headers (frontend will send these) or query params as fallback
+    const userRole = (req.headers['x-user-role'] || req.query.role || '').toUpperCase();
+    const userEmail = (req.headers['x-user-email'] || req.query.email || '').toLowerCase();
+
+    const settings = await getApprovedOrdersSettings();
+
     const querySnapshot = await getDocs(collection(db, 'approved_orders'));
-    const approvedOrders = querySnapshot.docs.map(doc => doc.data());
+    let approvedOrders = querySnapshot.docs.map(doc => doc.data());
+
+    // Super admin sees everything
+    if (userRole === 'SUPER_ADMIN') {
+      return res.json(approvedOrders);
+    }
+
+    // Compute cutoff based on configured time limit (days)
+    const days = parseInt(settings.time_limit_days || 4, 10) || 4;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // Check if user has an admitted entry
+    const admittedEntry = (settings.admitted || []).find(a => String(a.email || '').toLowerCase() === userEmail);
+    const isAdmitted = Boolean(admittedEntry && (!admittedEntry.expires_at || new Date(admittedEntry.expires_at) > new Date()));
+
+    // Filter orders to those approved within cutoff OR allow if user is individually admitted
+    approvedOrders = approvedOrders.filter(o => {
+      if (isAdmitted) return true;
+      const approvedAt = new Date(o.approved_at || o.approvedAt || 0);
+      return approvedAt >= cutoff;
+    });
+
     res.json(approvedOrders);
   } catch (error) {
     console.error('Error fetching approved orders:', error);
     res.status(500).json({ error: 'Failed to fetch approved orders' });
+  }
+});
+
+// Request temporary access to Approved Orders (creates a request for Super Admin review)
+app.post('/api/approved-orders/request', async (req, res) => {
+  try {
+    const { email, name, reason } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const reqId = `AORQ-${Date.now()}`;
+    await setDoc(doc(db, 'approved_orders_requests', reqId), {
+      id: reqId,
+      email: String(email).toLowerCase(),
+      name: name || '',
+      reason: reason || 'Request access to Approved Orders',
+      status: 'PENDING',
+      createdAt: new Date().toISOString()
+    });
+
+    // Create a notification for superadmin users
+    const notifId = `NOTIF-AORQ-${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: 'SUPER_ADMIN',
+      title: 'Approved Orders Access Request',
+      message: `User ${email} requested access to Approved Orders`,
+      type: 'ACCESS_REQUEST',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    res.json({ success: true, id: reqId });
+  } catch (e) {
+    console.error('Error creating access request:', e);
+    res.status(500).json({ error: 'Failed to submit request' });
+  }
+});
+
+// Super Admin: list access requests
+app.get('/api/approved-orders/requests', async (req, res) => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'approved_orders_requests'));
+    const requests = querySnapshot.docs.map(d => d.data()).sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+    res.json(requests);
+  } catch (e) {
+    console.error('Error fetching access requests:', e);
+    res.status(500).json({ error: 'Failed to fetch requests' });
+  }
+});
+
+// Super Admin: grant temporary access to an email
+app.post('/api/approved-orders/grant', async (req, res) => {
+  try {
+    const callerRole = (req.headers['x-user-role'] || '').toUpperCase();
+    if (callerRole !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Only SUPER_ADMIN may grant access' });
+
+    const { email, days } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const settingsRef = doc(db, SYSTEM_SETTINGS_COLLECTION, 'approved_orders');
+    const snap = await getDoc(settingsRef);
+    const settings = snap.exists() ? snap.data() : { time_limit_days: 4, admitted: [] };
+
+    const expires_at = days ? new Date(Date.now() + parseInt(days,10) * 24 * 60 * 60 * 1000).toISOString() : null;
+    const admitted = (settings.admitted || []).filter(a => String(a.email).toLowerCase() !== String(email).toLowerCase());
+    admitted.push({ email: String(email).toLowerCase(), admitted_at: new Date().toISOString(), expires_at });
+
+    await setDoc(settingsRef, { ...settings, admitted });
+
+    // Mark any related request as approved
+    try {
+      const reqSnap = await getDocs(query(collection(db, 'approved_orders_requests'), where('email', '==', String(email).toLowerCase()), where('status', '==', 'PENDING')));
+      reqSnap.docs.forEach(async d => {
+        await setDoc(doc(db, 'approved_orders_requests', d.id), { ...d.data(), status: 'APPROVED', approvedAt: new Date().toISOString(), approvedBy: 'SUPER_ADMIN' });
+      });
+    } catch (inner) { /* ignore */ }
+
+    // Create a targeted notification for the approved user
+    try {
+      const notifId = `NOTIF-GRANT-${Date.now()}`;
+      await setDoc(doc(db, 'notifications', notifId), {
+        id: notifId,
+        userId: String(email).toLowerCase(),
+        title: 'Access Request Approved',
+        message: `Your request for Approved Orders access has been approved${days ? ' for ' + days + ' days' : ''}.`,
+        type: 'ACCESS_GRANTED',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) { /* ignore */ }
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error granting access:', e);
+    res.status(500).json({ error: 'Failed to grant access' });
+  }
+});
+
+// Super Admin: reject temporary access to an email
+app.post('/api/approved-orders/reject', async (req, res) => {
+  try {
+    const callerRole = (req.headers['x-user-role'] || '').toUpperCase();
+    if (callerRole !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Only SUPER_ADMIN may reject access' });
+
+    const { email, reason } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    // Mark any related request as rejected
+    try {
+      const reqSnap = await getDocs(query(collection(db, 'approved_orders_requests'), where('email', '==', String(email).toLowerCase()), where('status', '==', 'PENDING')));
+      reqSnap.docs.forEach(async d => {
+        await setDoc(doc(db, 'approved_orders_requests', d.id), { ...d.data(), status: 'REJECTED', rejectedAt: new Date().toISOString(), rejectedBy: 'SUPER_ADMIN', rejectReason: reason || '' });
+      });
+    } catch (inner) { /* ignore */ }
+
+    // Create a targeted notification for the rejected user
+    try {
+      const notifId = `NOTIF-REJECT-${Date.now()}`;
+      await setDoc(doc(db, 'notifications', notifId), {
+        id: notifId,
+        userId: String(email).toLowerCase(),
+        title: 'Access Request Rejected',
+        message: `Your request for Approved Orders access has been rejected by Super Admin.${reason ? ' Reason: ' + reason : ''}`,
+        type: 'ACCESS_REJECTED',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+    } catch (err) { /* ignore */ }
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Error rejecting access:', e);
+    res.status(500).json({ error: 'Failed to reject access' });
   }
 });
 
@@ -892,9 +1092,28 @@ app.get('/api/dashboard-stats', async (req, res) => {
 // 5. Get notifications
 app.get('/api/notifications', async (req, res) => {
   try {
-    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(10));
+    const userEmail = (req.query.email || '').toLowerCase();
+    const userRole = (req.query.role || '').toUpperCase();
+
+    const q = query(collection(db, 'notifications'), orderBy('createdAt', 'desc'), limit(30));
     const querySnapshot = await getDocs(q);
-    const notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    let notifications = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Filter in-memory to deliver targeted notifications
+    if (userEmail || userRole) {
+      notifications = notifications.filter(n => {
+        // If notification is explicitly targeted to this email
+        if (n.userId && String(n.userId).toLowerCase() === userEmail) return true;
+        // If notification is explicitly targeted to this role
+        if (n.userId && String(n.userId).toUpperCase() === userRole) return true;
+        // If it's a general system admin notification
+        if (!n.userId || n.userId === 'SYSTEM_ADMIN' || n.userId === 'SUPER_ADMIN') {
+          return userRole === 'SUPER_ADMIN';
+        }
+        return false;
+      });
+    }
+
     res.json(notifications);
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -1136,6 +1355,8 @@ app.get('/api/settings', async (req, res) => {
       rawData = rulesSnap.data();
     }
 
+    const settings = await getApprovedOrdersSettings();
+
     // Helper to extract numeric value from potentially nested object or direct value
     const extractNum = (val, fallback) => {
       if (val === undefined || val === null) return fallback;
@@ -1146,7 +1367,8 @@ app.get('/api/settings', async (req, res) => {
     const sanitized = {
       bin_capacity: extractNum(rawData.bin_capacity, 10),
       max_bin_weight: extractNum(rawData.max_bin_weight, 500.0),
-      max_bins: extractNum(rawData.max_bins, 50)
+      max_bins: extractNum(rawData.max_bins, 50),
+      time_limit_days: extractNum(settings.time_limit_days, 4)
     };
 
     console.log('📡 API /api/settings - Returning sanitized:', sanitized);
@@ -1159,13 +1381,26 @@ app.get('/api/settings', async (req, res) => {
 
 app.post('/api/settings', async (req, res) => {
   try {
-    const settings = req.body; // Expecting { bin_capacity, max_bin_weight, max_bins }
+    const { bin_capacity, max_bin_weight, max_bins, time_limit_days } = req.body;
     const docRef = doc(db, 'config', 'inventory_rules');
 
     await setDoc(docRef, {
-      ...settings,
+      bin_capacity,
+      max_bin_weight,
+      max_bins,
       updatedAt: new Date().toISOString()
     }, { merge: true });
+
+    if (time_limit_days !== undefined) {
+      const settingsRef = doc(db, SYSTEM_SETTINGS_COLLECTION, 'approved_orders');
+      const snap = await getDoc(settingsRef);
+      const settings = snap.exists() ? snap.data() : { time_limit_days: 4, admitted: [] };
+
+      await setDoc(settingsRef, {
+        ...settings,
+        time_limit_days: parseInt(time_limit_days, 10) || 4
+      });
+    }
 
     res.json({ success: true, message: 'Settings updated' });
   } catch (error) {

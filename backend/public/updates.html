@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Updates | Yarn Tracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+
+        .pulse-orange { animation: pulse-ring 2s infinite; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-fade { animation: fadeIn 0.4s ease-out; }
+
+        .success-toast { animation: slideIn 0.3s ease-out; }
+
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+    </style>
+    <link rel="stylesheet" href="/navbar.css">
+    <script src="/navbar.js"></script>
+</head>
+
+<body class="flex flex-col min-h-screen">
+    <div id="navbar-placeholder"></div>
+
+    <main class="flex-1 p-8 max-w-5xl mx-auto w-full page-fade">
+
+        <!-- Page Header -->
+        <header class="mb-10">
+            <div class="flex items-center gap-4 mb-2">
+                <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                        </path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">Application Updates</h1>
+                    <p class="text-slate-500 mt-1 text-base">Keep Yarn Tracker Pro up to date with the latest features and fixes</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Row: Version Card + Status Card -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+            <!-- Current Version Card -->
+            <div class="glass-card p-8 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div id="version-status-badge" class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full border border-slate-200">
+                            <span id="version-status-dot" class="w-2.5 h-2.5 bg-slate-400 rounded-full"></span>
+                            <span id="version-status-text" class="text-xs font-bold text-slate-600">Checking...</span>
+                        </div>
+                    </div>
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Installed Version</p>
+                    <p id="local-version-label" class="text-4xl font-extrabold text-slate-800 tracking-tight">—</p>
+                    <p class="text-slate-400 text-xs mt-2 font-semibold">Yarn Tracker Pro · Desktop</p>
+                </div>
+                <div class="mt-8 space-y-3">
+                    <button onclick="checkForUpdates(true)" id="checkUpdatesBtn"
+                        class="w-full bg-slate-900 hover:bg-black text-white py-3.5 rounded-xl font-bold transition transform active:scale-95 text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        Check for Updates
+                    </button>
+                    <p class="text-center text-[10px] text-slate-400 font-semibold">
+                        Last checked: <span id="last-checked-time">Never</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Update Info Panel -->
+            <div class="glass-card p-8 shadow-sm lg:col-span-2 flex flex-col">
+
+                <!-- Up to Date State -->
+                <div id="up-to-date-panel" class="flex-1 flex flex-col items-center justify-center text-center py-6">
+                    <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-5">
+                        <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-700 mb-1">You're up to date</h3>
+                    <p class="text-sm text-slate-400 max-w-xs">Yarn Tracker Pro is running the latest version. We'll let you know when updates are available.</p>
+                </div>
+
+                <!-- Checking State -->
+                <div id="checking-panel" class="flex-1 hidden flex flex-col items-center justify-center text-center py-6">
+                    <div class="w-16 h-16 bg-yellow-50 rounded-full flex items-center justify-center mb-5">
+                        <svg class="w-8 h-8 text-yellow-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-600">Checking for updates...</h3>
+                    <p class="text-sm text-slate-400 mt-1">Connecting to GitHub releases</p>
+                </div>
+
+                <!-- Update Available State -->
+                <div id="update-available-panel" class="hidden flex-1 flex flex-col justify-between space-y-5">
+                    <div>
+                        <div class="flex items-start justify-between pb-4 border-b border-slate-100">
+                            <div>
+                                <div class="flex items-center gap-3 mb-1">
+                                    <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-black" id="update-tag-badge">v—</span>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">New Release</span>
+                                </div>
+                                <h4 class="text-2xl font-black text-slate-800">Update Available</h4>
+                                <p class="text-xs text-slate-400 font-semibold mt-1">Released: <span id="update-date">—</span></p>
+                            </div>
+                            <div class="w-12 h-12 bg-orange-100 pulse-orange rounded-full flex items-center justify-center text-orange-500 flex-shrink-0">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Release Notes</p>
+                            <div id="update-notes"
+                                class="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-200 leading-relaxed font-medium max-h-44 overflow-y-auto">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Download Progress + Install Button -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <div id="download-progress-container" class="hidden space-y-2 mb-4">
+                            <div class="flex justify-between text-xs font-bold text-slate-500">
+                                <span id="download-status-label">Downloading Update...</span>
+                                <span id="download-progress-text">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+                                <div id="download-progress-bar"
+                                    class="bg-orange-500 h-full rounded-full transition-all duration-300"
+                                    style="width: 0%">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="update-action-container">
+                            <button onclick="installUpdate()" id="installUpdateBtn"
+                                class="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-xl font-bold shadow-lg shadow-orange-100 transition transform active:scale-95 text-sm uppercase tracking-wider flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                                    </path>
+                                </svg>
+                                Download &amp; Install Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error State -->
+                <div id="error-panel" class="hidden flex-1 flex flex-col items-center justify-center text-center py-6">
+                    <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-700">Could not check for updates</h3>
+                    <p id="error-message" class="text-sm text-slate-400 mt-1 max-w-xs">Failed to connect to GitHub. Check your internet connection.</p>
+                    <button onclick="checkForUpdates(true)" class="mt-4 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition">
+                        Retry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Version History / Info Row -->
+        <div class="glass-card p-6 shadow-sm">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="font-bold text-slate-700">How updates work</h3>
+            </div>
+            <ul class="space-y-2 text-sm text-slate-500 font-medium">
+                <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    Updates are checked against the GitHub Releases page for this application.
+                </li>
+                <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    The installer only downloads when you explicitly click <strong class="text-slate-700">Download &amp; Install Update</strong> — nothing runs automatically.
+                </li>
+                <li class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    The app will close automatically once the installer launches to allow files to be replaced.
+                </li>
+            </ul>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="fixed bottom-8 right-8 z-[100]"></div>
+
+    <script>
+        let currentAppVersion = '1.0.0';
+        let latestReleaseDetails = null;
+
+        function showPanel(name) {
+            ['up-to-date-panel', 'checking-panel', 'update-available-panel', 'error-panel'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(name + '-panel').classList.remove('hidden');
+        }
+
+        async function init() {
+            try {
+                if (window.electronAPI) {
+                    currentAppVersion = await window.electronAPI.getCurrentVersion();
+                    window.electronAPI.onDownloadProgress(onDownloadProgress);
+                }
+                document.getElementById('local-version-label').innerText = currentAppVersion;
+            } catch (e) {
+                console.error('Could not get app version:', e);
+            }
+            checkForUpdates(false);
+        }
+
+        function isNewerVersion(current, latest) {
+            const clean = v => v.replace(/^v/, '').split('.').map(Number);
+            const cur = clean(current);
+            const lat = clean(latest);
+            for (let i = 0; i < 3; i++) {
+                if ((lat[i] || 0) > (cur[i] || 0)) return true;
+                if ((cur[i] || 0) > (lat[i] || 0)) return false;
+            }
+            return false;
+        }
+
+        async function checkForUpdates(userTriggered = false) {
+            const btn = document.getElementById('checkUpdatesBtn');
+            const dot = document.getElementById('version-status-dot');
+            const txt = document.getElementById('version-status-text');
+
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Checking...`;
+
+            dot.className = 'w-2.5 h-2.5 bg-yellow-500 animate-pulse rounded-full';
+            txt.innerText = 'Checking...';
+            showPanel('checking');
+
+            try {
+                const resp = await fetch('https://api.github.com/repos/Rohit-reader/sudhan-yarns-desktop-using-electron/releases/latest');
+
+                if (resp.status === 404) {
+                    dot.className = 'w-2.5 h-2.5 bg-green-500 rounded-full';
+                    txt.innerText = 'Up to Date';
+                    document.getElementById('last-checked-time').innerText = new Date().toLocaleTimeString();
+                    showPanel('up-to-date');
+                    if (userTriggered) showToast('Up to Date', 'No releases published on GitHub yet.');
+                    return;
+                }
+
+                if (!resp.ok) throw new Error(`GitHub API error: ${resp.status}`);
+
+                const release = await resp.json();
+                const latestTag = release.tag_name;
+                const exeAsset = (release.assets || []).find(a => a.name.endsWith('.exe'));
+
+                latestReleaseDetails = {
+                    version: latestTag,
+                    date: new Date(release.published_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                    notes: release.body || 'No release notes provided.',
+                    downloadUrl: exeAsset ? exeAsset.browser_download_url : null
+                };
+
+                document.getElementById('last-checked-time').innerText = new Date().toLocaleTimeString();
+
+                if (isNewerVersion(currentAppVersion, latestTag) && latestReleaseDetails.downloadUrl) {
+                    dot.className = 'w-2.5 h-2.5 bg-orange-500 rounded-full';
+                    txt.innerText = 'Update Available';
+
+                    document.getElementById('update-tag-badge').innerText = latestTag;
+                    document.getElementById('update-date').innerText = latestReleaseDetails.date;
+                    document.getElementById('update-notes').innerHTML = renderMarkdown(latestReleaseDetails.notes);
+
+                    showPanel('update-available');
+                    if (userTriggered) showToast('Update Available', `Version ${latestTag} is ready to install.`);
+                } else {
+                    dot.className = 'w-2.5 h-2.5 bg-green-500 rounded-full';
+                    txt.innerText = 'Up to Date';
+                    showPanel('up-to-date');
+                    if (userTriggered) showToast('Up to Date', 'You are running the latest version.');
+                }
+            } catch (err) {
+                console.error('Update check failed:', err);
+                dot.className = 'w-2.5 h-2.5 bg-rose-500 rounded-full';
+                txt.innerText = 'Error';
+                document.getElementById('error-message').innerText = err.message || 'Failed to connect to GitHub.';
+                showPanel('error');
+                if (userTriggered) showToast('Error', 'Could not reach GitHub. Check your connection.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Check for Updates`;
+            }
+        }
+
+        function renderMarkdown(md) {
+            return md
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^[-*]\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/\n/g, '<br/>');
+        }
+
+        function onDownloadProgress(percent) {
+            document.getElementById('download-progress-container').classList.remove('hidden');
+            document.getElementById('update-action-container').classList.add('hidden');
+            document.getElementById('download-progress-text').innerText = `${percent}%`;
+            document.getElementById('download-progress-bar').style.width = `${percent}%`;
+            document.getElementById('download-status-label').innerText = percent >= 100 ? 'Installing...' : 'Downloading Update...';
+        }
+
+        async function installUpdate() {
+            if (!latestReleaseDetails?.downloadUrl) {
+                showToast('Error', 'No download URL found for this release.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('installUpdateBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Downloading...`;
+
+            onDownloadProgress(0);
+
+            try {
+                const result = await window.electronAPI.installUpdate({ downloadUrl: latestReleaseDetails.downloadUrl });
+                if (!result.success) throw new Error(result.error || 'Installation failed');
+            } catch (err) {
+                showToast('Update Failed', err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download &amp; Install Update`;
+                document.getElementById('download-progress-container').classList.add('hidden');
+                document.getElementById('update-action-container').classList.remove('hidden');
+            }
+        }
+
+        function showToast(title, message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-slate-900' : 'bg-rose-600';
+            toast.className = `success-toast shadow-2xl p-5 rounded-2xl max-w-sm mb-4 ${bg} text-white`;
+            toast.innerHTML = `<p class="font-black uppercase tracking-widest text-xs opacity-70 mb-1">${title}</p><p class="text-sm font-bold">${message}</p>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.style.transition = 'all 0.5s ease-out';
+                setTimeout(() => toast.remove(), 500);
+            }, 3500);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
