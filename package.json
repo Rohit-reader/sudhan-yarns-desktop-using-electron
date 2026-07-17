@@ -45,24 +45,34 @@
   
 "build": {
   "appId": "com.sudhan.desktop",
-
   "productName": "Sudhan Desktop",
 
   "directories": {
     "output": "release"
   },
 
+  "asar": true,
+
   "files": [
-  "**/*",
-  "!release/**/*",
-  "!dist/**/*",
-  "!out/**/*",
-  "!build/**/*",
-  "!node_modules/.cache/**/*",
-  "!*.log",
-  "!*.md",
-  "!.git/**/*"
-],
+    "src/**/*",
+    "common/**/*",
+    "package.json",
+    "package-lock.json",
+    "!python_folders/**/*",
+    "!out/**/*",
+    "!release/**/*",
+    "!*.md",
+    "!*.spec",
+    "!*.log",
+    "!.git/**/*"
+  ],
+
+  "extraResources": [
+    {
+      "from": "backend",
+      "to": "backend"
+    }
+  ],
 
   "win": {
     "target": "nsis"
