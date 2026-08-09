@@ -77,7 +77,7 @@
                                     <label
                                         class="block text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">Yarn
                                         Quality</label>
-                                    <select required name="yarn_type" onchange="updateRowStock(this)"
+                                    <select required name="yarn_type" onchange="updateAllDropdowns()"
                                         class="yarn-type-select w-full p-4 rounded-xl input-field focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none">
                                         <option value="" selected disabled>Select</option>
                                         <option value="" disabled>Loading qualities...</option>
@@ -89,7 +89,7 @@
                                     <label
                                         class="block text-slate-500 text-xs font-medium mb-1 uppercase tracking-wider">Quantity
                                         (Rolls)</label>
-                                    <input type="number" required name="quantity" min="1"
+                                    <input type="number" required name="quantity" min="1" oninput="updateAllDropdowns()"
                                         class="w-full p-4 rounded-xl input-field focus:outline-none focus:ring-1 focus:ring-orange-500"
                                         value="1">
                                 </div>
@@ -136,6 +136,7 @@
 
         <script>
             let cachedQualities = [];
+            let typeCounts = {};
 
             function showToast(message, isError = false) {
                 const toast = document.getElementById('toast');
@@ -153,38 +154,30 @@
                 const row = document.createElement('div');
                 row.className = 'item-row glass p-4 rounded-2xl border border-orange-100/50 relative group animate-in slide-in-from-top-2 duration-300';
 
-                let qualityOptions = '<option value="" selected disabled>Select</option>';
-                if (cachedQualities.length > 0) {
-                    qualityOptions += cachedQualities.map(t =>
-                        `<option value="${t}">${t} (${typeCounts[t]} rolls)</option>`
-                    ).join('');
-                } else {
-                    qualityOptions += '<option disabled>Loading...</option>';
-                }
-
                 row.innerHTML = `
-                    <button type="button" onclick="this.parentElement.remove()" 
+                    <button type="button" onclick="this.closest('.item-row').remove(); updateAllDropdowns();" 
                         class="absolute -right-2 -top-2 bg-white text-rose-500 rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity border border-rose-100">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                     <div class="grid grid-cols-1 gap-4">
                         <div>
                             <label class="block text-slate-500 text-sm font-medium mb-1 uppercase tracking-wider" style="font-size: 0.65rem;">Yarn Quality</label>
-                            <select required name="yarn_type" onchange="updateRowStock(this)"
+                            <select required name="yarn_type" onchange="updateAllDropdowns()"
                                 class="yarn-type-select w-full p-4 rounded-xl input-field focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none">
-                                ${qualityOptions}
+                                <option value="" selected disabled>Select</option>
                             </select>
                             <div class="row-stock-info mt-1 text-[10px] font-bold text-orange-600 h-4 px-1"></div>
                         </div>
                         <div>
                             <label class="block text-slate-500 text-sm font-medium mb-1 uppercase tracking-wider" style="font-size: 0.65rem;">Quantity (Rolls)</label>
-                            <input type="number" required name="quantity" min="1"
+                            <input type="number" required name="quantity" min="1" oninput="updateAllDropdowns()"
                                 class="w-full p-4 rounded-xl input-field focus:outline-none focus:ring-1 focus:ring-orange-500"
                                 value="1">
                         </div>
                     </div>
                 `;
                 container.appendChild(row);
+                updateAllDropdowns();
             }
 
             document.getElementById('orderForm').onsubmit = async (e) => {
@@ -228,8 +221,6 @@
                 }
             };
 
-            let typeCounts = {};
-
             async function populateQualities() {
                 try {
                     const response = await fetch('/api/rolls');
@@ -248,38 +239,75 @@
                     });
 
                     cachedQualities = Object.keys(typeCounts).sort();
-
-                    const selects = document.querySelectorAll('.yarn-type-select');
-                    selects.forEach(select => {
-                        const currentVal = select.value;
-                        let options = '<option value="" selected disabled>Select</option>';
-
-                        if (cachedQualities.length === 0) {
-                            options = '<option value="" disabled>No qualities available</option>';
-                        } else {
-                            options += cachedQualities.map(t =>
-                                `<option value="${t}" ${t === currentVal ? 'selected' : ''}>${t} (${typeCounts[t]} rolls)</option>`
-                            ).join('');
-                        }
-                        select.innerHTML = options;
-                        updateRowStock(select);
-                    });
+                    updateAllDropdowns();
                 } catch (err) {
                     console.error('Failed to load qualities:', err);
                 }
             }
 
-            function updateRowStock(select) {
-                const type = select.value;
-                const container = select.parentElement;
-                const infoDiv = container.querySelector('.row-stock-info');
-                if (infoDiv) {
-                    if (type && typeCounts[type] !== undefined) {
-                        infoDiv.innerText = `● ${typeCounts[type]} rolls available in warehouse`;
-                    } else {
-                        infoDiv.innerText = '';
+            function updateAllDropdowns() {
+                const rows = Array.from(document.querySelectorAll('.item-row'));
+
+                // Step 1: Calculate total allocated quantity for each yarn type across all rows
+                const allocatedCounts = {};
+                rows.forEach(row => {
+                    const typeSelect = row.querySelector('[name="yarn_type"]');
+                    const qtyInput = row.querySelector('[name="quantity"]');
+                    const type = typeSelect ? typeSelect.value : '';
+                    const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+
+                    if (type) {
+                        allocatedCounts[type] = (allocatedCounts[type] || 0) + qty;
                     }
-                }
+                });
+
+                // Step 2: For each row, update its select options and stock display based on stock remaining OUTSIDE this row
+                rows.forEach(row => {
+                    const typeSelect = row.querySelector('[name="yarn_type"]');
+                    const qtyInput = row.querySelector('[name="quantity"]');
+                    const infoDiv = row.querySelector('.row-stock-info');
+                    if (!typeSelect) return;
+
+                    const currentVal = typeSelect.value;
+                    const currentQty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+
+                    // Rebuild select options
+                    let options = '<option value="" disabled ' + (!currentVal ? 'selected' : '') + '>Select</option>';
+
+                    if (cachedQualities.length === 0) {
+                        options = '<option value="" disabled>No qualities available</option>';
+                    } else {
+                        cachedQualities.forEach(t => {
+                            const totalInWarehouse = typeCounts[t] || 0;
+                            const totalAllocatedInOtherRows = (allocatedCounts[t] || 0) - (t === currentVal ? currentQty : 0);
+                            const remainingForThisRow = Math.max(0, totalInWarehouse - totalAllocatedInOtherRows);
+
+                            // Show option if remainingForThisRow > 0 OR if it is currently selected in this row
+                            if (remainingForThisRow > 0 || t === currentVal) {
+                                const isSelected = (t === currentVal);
+                                options += `<option value="${t}" ${isSelected ? 'selected' : ''}>${t} (${remainingForThisRow} rolls available)</option>`;
+                            }
+                        });
+                    }
+
+                    typeSelect.innerHTML = options;
+
+                    // Update info & max quantity for current row
+                    if (currentVal && typeCounts[currentVal] !== undefined) {
+                        const totalInWarehouse = typeCounts[currentVal];
+                        const totalAllocatedInOtherRows = (allocatedCounts[currentVal] || 0) - currentQty;
+                        const remainingForThisRow = Math.max(0, totalInWarehouse - totalAllocatedInOtherRows);
+
+                        if (infoDiv) {
+                            infoDiv.innerText = `● ${remainingForThisRow} rolls available`;
+                        }
+                        if (qtyInput) {
+                            qtyInput.max = remainingForThisRow > 0 ? remainingForThisRow : 1;
+                        }
+                    } else {
+                        if (infoDiv) infoDiv.innerText = '';
+                    }
+                });
             }
 
             populateQualities();
