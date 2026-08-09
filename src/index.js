@@ -177,11 +177,6 @@ const createMainWindow = () => {
     }
     mainWindow.maximize();
     mainWindow.show();
-    
-    // Open DevTools in development for debugging
-    if (!app.isPackaged) {
-      mainWindow.webContents.openDevTools();
-    }
   });
 
   mainWindow.on('closed', () => (mainWindow = null));
