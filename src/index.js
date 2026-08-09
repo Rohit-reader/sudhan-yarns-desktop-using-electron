@@ -414,12 +414,12 @@ const startBackend = () => {
 const checkServerHealth = () => {
   return new Promise((resolve) => {
     let attempts = 0;
-    const maxAttempts = 10; // 10 seconds max
+    const maxAttempts = 60; // 60 seconds max
 
     const poll = () => {
       attempts++;
       if (attempts > maxAttempts) {
-        console.warn('⚠️ Server health check timed out after 10 seconds. App may not work correctly.');
+        console.warn('⚠️ Server health check timed out after 60 seconds. App may not work correctly.');
         return resolve(false);
       }
 
