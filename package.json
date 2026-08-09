@@ -1,7 +1,7 @@
 {
   "name": "sudhan_desktop",
   "productName": "sudhan_desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "checking if update feature works",
   "main": "src/index.js",
   "private": true,
